@@ -1,0 +1,2 @@
+include ':app', ':simplestore', ':simplereflections'
+rootProject.name='simpleAndroid'
