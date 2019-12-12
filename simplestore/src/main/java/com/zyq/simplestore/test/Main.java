@@ -1,6 +1,7 @@
 package com.zyq.simplestore.test;
 
 import com.zyq.simplestore.SimpleStore;
+import com.zyq.simplestore.core.CustomerDbHelper;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.simplestore.core.WhereBulider;
 import com.zyq.simplestore.imp.DbIgnore;
@@ -36,7 +37,12 @@ public class Main {
        DbOrmHelper.getInstent().query(TableBean.class);//查询表所有数据
        DbOrmHelper.getInstent().query(TableBean.class, WhereBulider.creat().where("name=?","lise").OR("name=?","tom"));//条件查询
        DbOrmHelper.getInstent().query(TableBean.class,WhereBulider.creat().limit(1,15));//分页查找
-
+     //*********数据库多线程多连接操作
+       DbOrmHelper dbOrmHelper1= new DbOrmHelper();
+       DbOrmHelper dbOrmHelper2= new DbOrmHelper();
+       DbOrmHelper dbOrmHelper3= new DbOrmHelper();
+       //*******兼容旧数据库
+       CustomerDbHelper customerDbHelper=new CustomerDbHelper(null,null);
    }
    class TestBean{
        private String name;

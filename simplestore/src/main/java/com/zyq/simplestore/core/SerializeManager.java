@@ -19,6 +19,15 @@ public class SerializeManager {
         return JSON.parseObject(bytes,clazz);
     }
 
+
+
+
+    /**
+     * 解析引用对象
+     */
+    public Object praseReferenceClass(byte[] bytes, Class clazz) {
+        return byte2object(bytes,clazz);
+    }
 //    /**
 //     * 序列化对象
 //     * 对象 转为 byte[]

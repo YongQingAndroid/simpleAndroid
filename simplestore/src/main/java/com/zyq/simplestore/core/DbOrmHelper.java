@@ -1,13 +1,14 @@
 package com.zyq.simplestore.core;
 
 import android.app.Application;
-import android.content.Context;
+
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
 import com.zyq.simplestore.log.LightLog;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,22 +20,23 @@ import java.util.List;
  * 优化映射关系数据为异步查询，返回集合对象使用到映射数据时才会触发数据库条件搜索
  * 映射子查询不可用于兼容老数据库表
  * 作者：zyq on 2017/6/9 15:17
- * 邮箱：zyq@posun.com
+ * 邮箱：1091425078@qq.com
  *
  * @author zyq
  */
 public class DbOrmHelper {
-    private SQLiteOpenHelper helper;
     private static DbOrmHelper self;
-    private static Context context;
-    private SQLiteDatabase sqLiteDatabase;
-    private SQLiteStatement statement;
+    private static Application context;
+    private DbWorker dbWorker;
+    public DbOrmHelper() {
+        dbWorker=new DbWorker(null,getContext());
+    }
 
     /**
      * @param helper 需要兼容到老数据库是初始化SQLiteOpenHelper
      */
     public void initSQLiteOpenHelper(SQLiteOpenHelper helper) {
-        this.helper = helper;
+        this.dbWorker.dbHelper = helper;
     }
 
     /**
@@ -46,13 +48,8 @@ public class DbOrmHelper {
         return self;
     }
 
-    public SQLiteOpenHelper getHelper() {
-        return helper == null ? helper = new DBHelper(context) : helper;
-    }
 
-    public DbOrmHelper() {
 
-    }
 
     /**
      * @param appcontext 上下文
@@ -69,25 +66,9 @@ public class DbOrmHelper {
         context = (Application) Class.forName("android.app.ActivityThread").getMethod("currentApplication").invoke(null, (Object[]) null);
     }
 
-    /**
-     * 打开可读写数据局
-     */
-    private void openDataBase() {
-        if (helper == null)
-            helper = new DBHelper(getContext());
-        sqLiteDatabase = helper.getWritableDatabase();
-    }
 
-    /**
-     * 打开只读数据库
-     */
-    private void openOnlyReadDataBase() {
-        if (helper == null)
-            helper = new DBHelper(getContext());
-        sqLiteDatabase = helper.getReadableDatabase();
-    }
 
-    private Context getContext() {
+    private Application getContext() {
         if (context == null) {
             try {
                 initSdk();
@@ -135,7 +116,7 @@ public class DbOrmHelper {
         OrmTableBean ormTableBean = DbPraseClazz.getInstent().getTableMsg(mClass);
         Field[] fields = ormTableBean.getFields();
         List list = new ArrayList<>();
-        openOnlyReadDataBase();
+        dbWorker.openOnlyReadDataBase();
         verification_tab(mClass);
         StringBuffer sql = new StringBuffer();
         sql.append("select * from ");
@@ -147,7 +128,7 @@ public class DbOrmHelper {
         }
         LightLog.i(sql.toString());
         int size = fields.length;
-        Cursor cursor = sqLiteDatabase.rawQuery(sql.toString(), whereBulider.getvalue());
+        Cursor cursor = dbWorker.getSqLiteDatabase().rawQuery(sql.toString(), whereBulider.getvalue());
         try {
             long sart = System.currentTimeMillis();
             while (cursor.moveToNext()) {
@@ -158,7 +139,7 @@ public class DbOrmHelper {
                     int index = cursor.getColumnIndex(name);
                     if (index == -1)
                         continue;
-                    Object myobj = DbOrmTools.getInstent().getvalue(cursor, field.getType(), index);
+                    Object myobj =dbWorker.getvalue(cursor, field.getType(), index);
 
                     if (myobj != null)
                         field.set(item, myobj);
@@ -171,26 +152,15 @@ public class DbOrmHelper {
         } finally {
             if (cursor != null)
                 cursor.close();
-            sqLiteDatabase.close();
+            dbWorker.getSqLiteDatabase().close();
         }
         return list;
-
     }
-    /**实例化对象*/
+
+    /**
+     * 实例化对象
+     */
     private <M> M newInstance(Class<M> mClass) throws InstantiationException, IllegalAccessException {
-//        Method[] methods = mClass.getDeclaredMethods();
-//        if (methods != null && methods.length > 0) {
-//            Class[] intArgsClass = methods[0].getParameterTypes();
-//            Constructor constructor = null;
-//            try {
-//                constructor = mClass.getDeclaredConstructor(intArgsClass);
-//                constructor.setAccessible(true);
-//                Object obj = constructor.newInstance(null);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }
-        
         return mClass.newInstance();
     }
 
@@ -274,28 +244,28 @@ public class DbOrmHelper {
         }
         SQLiteStatement statement = null;
         try {
-            openDataBase();
-            sqLiteDatabase.beginTransaction();
+            dbWorker.openDataBase();
+            dbWorker.getSqLiteDatabase().beginTransaction();
             StringBuffer sql = new StringBuffer();
             sql.append("delete from ");
             sql.append(ormTableBean.getTableName());
             sql.append(" where");
             sql.append(ormTableBean.getPrimaryKey().getName());
             sql.append("=?");
-            statement = sqLiteDatabase.compileStatement(sql.toString());
+            statement = dbWorker.getSqLiteDatabase().compileStatement(sql.toString());
             for (Object object : list) {
                 DbPraseClazz.getInstent().bindStatement(statement, 0, ormTableBean.getPrimaryKey().getType(), ormTableBean.getPrimaryKey(), object);
                 statement.executeUpdateDelete();
             }
-            sqLiteDatabase.setTransactionSuccessful();
+            dbWorker.getSqLiteDatabase().setTransactionSuccessful();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             if (statement != null)
                 statement.close();
-            if (sqLiteDatabase != null) {
-                sqLiteDatabase.endTransaction();
-                sqLiteDatabase.close();
+            if (dbWorker.getSqLiteDatabase() != null) {
+                dbWorker.getSqLiteDatabase().endTransaction();
+                dbWorker.getSqLiteDatabase().close();
             }
         }
     }
@@ -307,9 +277,7 @@ public class DbOrmHelper {
      * @param value
      */
     public void executeSql(String sql, String... value) {
-        if (helper == null)
-            helper = new DBHelper(context);
-        DbOrmTools.getInstent().setSQLiteOpenHelper(helper).executeSql(sql, value);
+        dbWorker.execSQL(sql,value);
     }
 
 
@@ -335,11 +303,12 @@ public class DbOrmHelper {
         if (tab_msg.getPrimaryKey() == null) {
             throw new RuntimeException(tab_msg.getTableName() + "no primarykey not limit save");
         }
+        SQLiteStatement  statement =null;
         try {
-            openDataBase();
+            dbWorker.openDataBase();
             verification_tab(clazz);
-            sqLiteDatabase.beginTransaction();
-            statement = sqLiteDatabase.compileStatement(DbPraseClazz.getInstent().getsaveSql(clazz));
+            dbWorker.getSqLiteDatabase().beginTransaction();
+            statement =   dbWorker.getSqLiteDatabase().compileStatement(DbPraseClazz.getInstent().getsaveSql(clazz));
             if (islist) {
                 List list = (List) object;
                 for (Object item : list) {
@@ -348,15 +317,15 @@ public class DbOrmHelper {
             } else {
                 DbPraseClazz.getInstent().saveData(statement, object, clazz);
             }
-            sqLiteDatabase.setTransactionSuccessful();
+            dbWorker.getSqLiteDatabase().setTransactionSuccessful();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             if (statement != null)
                 statement.close();
-            if (sqLiteDatabase != null) {
-                sqLiteDatabase.endTransaction();
-                sqLiteDatabase.close();
+            if ( dbWorker.getSqLiteDatabase() != null) {
+                dbWorker.getSqLiteDatabase().endTransaction();
+                dbWorker.getSqLiteDatabase().close();
             }
         }
     }
@@ -374,10 +343,10 @@ public class DbOrmHelper {
             return;
         }
         if (!mOrmTableBean.isCheckColumn()) {
-            if (DbOrmTools.getInstent().havetable(mOrmTableBean.getTableName(), sqLiteDatabase)) {
-                DbOrmTools.getInstent().checktable(clazz, sqLiteDatabase);
+            if (dbWorker.havetable(mOrmTableBean.getTableName(), dbWorker.getSqLiteDatabase())) {
+                dbWorker.checktable(clazz, dbWorker.getSqLiteDatabase());
             } else {
-                sqLiteDatabase.execSQL(DbPraseClazz.getInstent().getCreaTabSql(clazz));
+                dbWorker.getSqLiteDatabase().execSQL(DbPraseClazz.getInstent().getCreaTabSql(clazz));
                 mOrmTableBean.setCheckColumn(true);
             }
         }
@@ -389,7 +358,7 @@ public class DbOrmHelper {
      *
      * @param sqLiteOpenHelper
      */
-    public static DbOrmTools with(SQLiteOpenHelper sqLiteOpenHelper) {
-        return DbOrmTools.getInstent().setSQLiteOpenHelper(sqLiteOpenHelper);
-    }
+//    public static 666 with(SQLiteOpenHelper sqLiteOpenHelper) {
+//        return 666.getInstent().setSQLiteOpenHelper(sqLiteOpenHelper);
+//    }
 }
