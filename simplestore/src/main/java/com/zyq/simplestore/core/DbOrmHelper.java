@@ -19,9 +19,7 @@ import java.util.List;
  * 查询数据时带有映射关系类型必须为ArrayList或List
  * 优化映射关系数据为异步查询，返回集合对象使用到映射数据时才会触发数据库条件搜索
  * 映射子查询不可用于兼容老数据库表
- * 作者：zyq on 2017/6/9 15:17
- * 邮箱：1091425078@qq.com
- *
+ * 作者：zyq
  * @author zyq
  */
 public class DbOrmHelper {
@@ -135,6 +133,7 @@ public class DbOrmHelper {
                 Object item = newInstance(mClass);
                 for (int i = 0; i < size; i++) {
                     Field field = fields[i];
+//                    field.setAccessible(true);//跳过安全检查可以提高速度
                     String name = field.getName();
                     int index = cursor.getColumnIndex(name);
                     if (index == -1)

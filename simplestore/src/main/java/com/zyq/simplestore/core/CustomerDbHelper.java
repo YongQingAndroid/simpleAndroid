@@ -14,6 +14,7 @@ import java.util.List;
 
 public class CustomerDbHelper {
     DbWorker dbWorker;
+
     public CustomerDbHelper(SQLiteOpenHelper helper,Application app){
         dbWorker=new DbWorker(helper,app);
     }
@@ -27,6 +28,13 @@ public class CustomerDbHelper {
     public void save(Object object, String tableName) {
        updata(object,tableName,null);
     }
+
+    /**
+     *
+     * @param object
+     * @param tableName
+     * @param whereBulider
+     */
     public void updata(Object object, String tableName,WhereBulider whereBulider) {
 
         Class clazz;

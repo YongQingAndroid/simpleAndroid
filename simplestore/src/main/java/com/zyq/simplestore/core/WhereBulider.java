@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by qing on 2017/6/11.
  * orm条件构造器
  * @author zyq
  */

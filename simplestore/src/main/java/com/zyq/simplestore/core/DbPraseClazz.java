@@ -4,6 +4,7 @@ import android.database.sqlite.SQLiteStatement;
 
 
 import com.zyq.simplestore.imp.DbIgnore;
+import com.zyq.simplestore.imp.DbMaping;
 import com.zyq.simplestore.imp.DbPrimaryKey;
 import com.zyq.simplestore.imp.DbTableName;
 import com.zyq.simplestore.log.LightLog;
@@ -16,11 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * package kotlinTest:qing.posun.com.calender.orm.DbPraseClazz.class
- * 作者：zyq on 2017/6/9 16:04
- * 邮箱：zyq@posun.com
  * 字段反射处理类
- *
  * @author zyq
  */
 public class DbPraseClazz {
@@ -102,6 +99,7 @@ public class DbPraseClazz {
         Map<String, Field> mapping = new HashMap<>();
         for (int i = 0; i < size; i++) {
             Field myfield = fields[i];
+            myfield.setAccessible(true);//跳过安全检查调高响应速度
             if (myfield.getName().equalsIgnoreCase("$change") || (myfield.getAnnotation(DbIgnore.class) != null)) {
                 continue;
             }
@@ -111,8 +109,9 @@ public class DbPraseClazz {
             if (myfield.getName().equalsIgnoreCase("id"))
                 defult_primaryField = myfield;
             myfield.setAccessible(true);
-            if (praseMapping(myfield, mapping))
+            if (praseMapping(myfield, mapping)){
                 continue;
+            }
             table_field.add(myfield);
         }
         if (table_field.size() < 0) {
@@ -297,12 +296,15 @@ public class DbPraseClazz {
      * 判断映射关系
      */
     private boolean praseMapping(Field field, Map<String, Field> map) {
-//        Object o = field.getAnnotation(lightMapping.class);
-//        if (o != null) {
-//            lightMapping mapping = (lightMapping) o;
-//            map.put(mapping.value(), field);
-//            return true;
-//        }
+        if(!DbWorker.openMaping){
+            return false;
+        }
+        Object o = field.getAnnotation(DbMaping.class);
+        if (o != null) {
+//            DbMaping mapping = (DbMaping) o;
+            map.put(field.getName(), field);
+            return true;
+        }
         return false;
     }
 }

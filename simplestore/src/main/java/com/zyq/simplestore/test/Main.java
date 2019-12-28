@@ -4,9 +4,13 @@ import com.zyq.simplestore.SimpleStore;
 import com.zyq.simplestore.core.CustomerDbHelper;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.simplestore.core.WhereBulider;
+import com.zyq.simplestore.imp.DbColumn;
 import com.zyq.simplestore.imp.DbIgnore;
+import com.zyq.simplestore.imp.DbMaping;
 import com.zyq.simplestore.imp.DbPrimaryKey;
 import com.zyq.simplestore.imp.DbTableName;
+import com.zyq.simplestore.imp.ToMany;
+import com.zyq.simplestore.imp.ToOne;
 
 public class Main {
    void test(){
@@ -23,16 +27,16 @@ public class Main {
        });
        //数据库操作**********************************************
        //
-       TestBean ded=  new TestBean();
+       TestBean obj1=  new TestBean();
        //增
-       DbOrmHelper.getInstent().save(ded);
+       DbOrmHelper.getInstent().save(obj1);
        //删
-       DbOrmHelper.getInstent().remove(ded); //删除数据
+       DbOrmHelper.getInstent().remove(obj1); //删除数据
        DbOrmHelper.getInstent().remove(TableBean.class);//删除表
        //改
-       ded.name="修改名字";
-       DbOrmHelper.getInstent().save(ded);
-       DbOrmHelper.getInstent().updata(ded);
+       obj1.name="修改名字";
+       DbOrmHelper.getInstent().save(obj1);
+       DbOrmHelper.getInstent().updata(obj1);
        //查
        DbOrmHelper.getInstent().query(TableBean.class);//查询表所有数据
        DbOrmHelper.getInstent().query(TableBean.class, WhereBulider.creat().where("name=?","lise").OR("name=?","tom"));//条件查询
@@ -47,11 +51,24 @@ public class Main {
    class TestBean{
        private String name;
    }
-   @DbTableName("tableTable") //自定义表名
+   @DbTableName("tableTable") //自定义表名(默认使用类名作为表名)
    static class TableBean{
       @DbPrimaryKey //指定主键(默认使用字段名为id的字段作为主键)
        String id;
       @DbIgnore //数据库忽略当前字段
       String name;
+      @DbColumn("cid")
+      String cid;
+
+      @ToMany
+      @ToOne
+      @DbMaping(c1 = "cid",c2 = "id")
+       TableBean1 msg;
    }
+
+    static class TableBean1{
+        @DbPrimaryKey
+        String id;
+       String name;
+    }
 }

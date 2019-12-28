@@ -26,8 +26,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.google.guava:guava:26.0-jre'
-    implementation 'org.javassist:javassist:3.20.0-GA'
+//    implementation 'com.google.guava:guava:26.0-jre'
+    implementation 'org.javassist:javassist:3.25.0-GA'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'

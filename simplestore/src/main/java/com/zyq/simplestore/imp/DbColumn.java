@@ -5,9 +5,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
-@Target({ElementType.TYPE})
+/**
+ * orm指定列名字
+ * **/
+@Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DbTableName {
+public @interface DbColumn {
     String value() default "";
 }

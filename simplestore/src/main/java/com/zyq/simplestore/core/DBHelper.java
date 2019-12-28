@@ -6,9 +6,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 /**
  * 默认ORM数据库
- * package kotlinTest:qing.posun.com.calender.orm.DBHelper.class
- * 作者：zyq on 2017/6/9 14:33
- * 邮箱：zyq@posun.com
  */
 public class DBHelper extends SQLiteOpenHelper {
     public static final String db_name="light_help.db",sdCard="/mnt/sdcard/light_help.db";

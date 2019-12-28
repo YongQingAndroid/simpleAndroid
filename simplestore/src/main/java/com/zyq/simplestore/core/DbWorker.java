@@ -18,6 +18,7 @@ public class DbWorker {
     public SQLiteOpenHelper dbHelper;
     public Application application;
     public SQLiteDatabase sqLiteDatabase;
+    public static boolean openMaping=false;//开启主键外键多表查询为内连接（开启会影响数据库读写速度）
     public  DbWorker(SQLiteOpenHelper dbHelper,Application application){
         this.dbHelper=dbHelper;
         this.application=application;
