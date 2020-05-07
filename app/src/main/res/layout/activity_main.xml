@@ -13,5 +13,16 @@
        android:text="测试"
        android:onClick="mClick"
        ></Button>
-
+   <Button
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:text="时间"
+       android:onClick="mClicktime"
+       ></Button>
+   <Button
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:text="地址"
+       android:onClick="mClickcity"
+       ></Button>
 </LinearLayout>
