@@ -25,7 +25,7 @@ public class SimpleStore {
      * 开启磁盘映射
      */
     public static void openMmap(){
-
+         //涉及底层待实现
     }
 
     /**

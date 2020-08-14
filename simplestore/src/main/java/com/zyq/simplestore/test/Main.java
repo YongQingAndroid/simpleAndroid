@@ -47,6 +47,7 @@ public class Main {
        DbOrmHelper dbOrmHelper3= new DbOrmHelper();
        //*******兼容旧数据库
        CustomerDbHelper customerDbHelper=new CustomerDbHelper(null,null);
+       customerDbHelper.save(null,"tableTable");
    }
    class TestBean{
        private String name;

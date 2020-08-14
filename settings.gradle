@@ -1,2 +1,2 @@
-include ':app', ':simplestore', ':simplereflections', ':jsimleplepicker'
+include ':app', ':simplestore', ':simplereflections', ':jsimleplepicker', ':simplecitypicker', ':simplepermission'
 rootProject.name='simpleAndroid'
