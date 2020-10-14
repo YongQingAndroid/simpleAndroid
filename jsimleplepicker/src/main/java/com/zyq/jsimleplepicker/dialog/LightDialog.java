@@ -1,4 +1,5 @@
 package com.zyq.jsimleplepicker.dialog;
+
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -7,6 +8,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+
 import com.zyq.jsimleplepicker.QlightUnit;
 
 /**
@@ -18,7 +20,8 @@ public class LightDialog extends Dialog {
     private QGriavty state;
     private boolean isFullSrceen = false;
     protected Window window;
-    protected boolean hasPadding=false;
+    protected boolean hasPadding = false;
+
     public LightDialog(Context context, int themeResId) {
         super(context, themeResId);
         init();
@@ -29,8 +32,9 @@ public class LightDialog extends Dialog {
         init();
     }
 
-    public void setHasPadding(boolean hasPadding) {
+    public LightDialog setHasPadding(boolean hasPadding) {
         this.hasPadding = hasPadding;
+        return this;
     }
 
     private void init() {
@@ -39,8 +43,10 @@ public class LightDialog extends Dialog {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         initEvent();
     }
-    public void setFullSrceen(boolean arg) {
+
+    public LightDialog setFullSrceen(boolean arg) {
         isFullSrceen = arg;
+        return this;
     }
 
     @Override
@@ -48,7 +54,7 @@ public class LightDialog extends Dialog {
 
         super.show();
         /**這些东西不写在show后面变不会生效*/
-        if(!hasPadding){
+        if (!hasPadding) {
             WindowManager.LayoutParams lp = window.getAttributes();
             if (isFullSrceen) {
                 lp.dimAmount = 0f;
@@ -56,7 +62,7 @@ public class LightDialog extends Dialog {
             window.setBackgroundDrawableResource(android.R.color.transparent);
             lp.width = WindowManager.LayoutParams.MATCH_PARENT;
             window.setAttributes(lp);
-            if(QGriavty.FULL==state)
+            if (QGriavty.FULL == state)
                 return;
         }
         window.setGravity(state == null ? Gravity.BOTTOM : state.state);
@@ -66,14 +72,7 @@ public class LightDialog extends Dialog {
         state = arg;
     }
 
-    public static LightDialog MakeDialog(View content, QGriavty... state) {
-        LightDialog dialog = new LightDialog(content.getContext());
-        dialog.setContentView(content);
-        if (!QlightUnit.isEmpty(state)) {
-            dialog.setGravity(state[0]);
-        }
-        return dialog;
-    }
+
 
     private void initEvent() {
         this.setOnKeyListener(new OnKeyListener() {
@@ -91,9 +90,11 @@ public class LightDialog extends Dialog {
         TOP(Gravity.TOP),
         CENTER(Gravity.CENTER),
         FULL(0),
-        BOTTOM(Gravity.BOTTOM), ;
+        BOTTOM(Gravity.BOTTOM),
+        ;
 
         protected int state;
+
         QGriavty(int state) {
             this.state = state;
         }
