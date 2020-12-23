@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
+import com.zyq.simplestore.imp.BaseSQLiteOpenHelper;
 import com.zyq.simplestore.log.LightLog;
 
 import java.lang.reflect.Field;
@@ -15,9 +16,10 @@ import java.util.List;
 public class CustomerDbHelper {
     DbWorker dbWorker;
 
-    public CustomerDbHelper(SQLiteOpenHelper helper,Application app){
-        dbWorker=new DbWorker(helper,app);
+    public CustomerDbHelper(BaseSQLiteOpenHelper helper, Application app) {
+        dbWorker = new DbWorker(helper, app);
     }
+
     /**
      * 兼容模式模式数据保存
      * 预处理表字段和模型的对应关系
@@ -26,16 +28,15 @@ public class CustomerDbHelper {
      * @param tableName 表格名字
      */
     public void save(Object object, String tableName) {
-       updata(object,tableName,null);
+        updata(object, tableName, null);
     }
 
     /**
-     *
      * @param object
      * @param tableName
      * @param whereBulider
      */
-    public void updata(Object object, String tableName,WhereBulider whereBulider) {
+    public void updata(Object object, String tableName, WhereBulider whereBulider) {
 
         Class clazz;
         if (object == null)
@@ -53,7 +54,7 @@ public class CustomerDbHelper {
         try {
             dbWorker.openDataBase();
             sqLiteDatabase = dbWorker.getSqLiteDatabase();
-            saveExecute(object, tableName, islist, clazz, sqLiteDatabase,whereBulider);
+            saveExecute(object, tableName, islist, clazz, sqLiteDatabase, whereBulider);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -61,6 +62,7 @@ public class CustomerDbHelper {
                 sqLiteDatabase.close();
         }
     }
+
     /**
      * 用于兼容模式字段保存
      *
@@ -70,7 +72,7 @@ public class CustomerDbHelper {
      * @param object         数据实体或者集合
      * @param tableName      表格名字
      */
-    private void saveExecute(Object object, String tableName, boolean islist, Class clazz, SQLiteDatabase sqLiteDatabase,WhereBulider whereBulider) throws Exception {
+    private void saveExecute(Object object, String tableName, boolean islist, Class clazz, SQLiteDatabase sqLiteDatabase, WhereBulider whereBulider) throws Exception {
 
         if (!dbWorker.havetable(tableName, sqLiteDatabase)) {
             LightLog.e(tableName + " Table does not exist");
@@ -85,8 +87,8 @@ public class CustomerDbHelper {
             sqLiteDatabase.beginTransaction();
 
             StringBuilder sql = new StringBuilder();
-            sql.append( DbPraseClazz.getInstent().getsaveSql(ormTableBean));
-            if(whereBulider!=null){
+            sql.append(DbPraseClazz.getInstent().getsaveSql(ormTableBean));
+            if (whereBulider != null) {
                 sql.append(" ");
                 sql.append(whereBulider.toString());
             }
@@ -110,22 +112,25 @@ public class CustomerDbHelper {
             }
         }
     }
+
     /**
      * 兼容模式查询数据库
      *
      * @param clazz     表格对象
      * @param tableName 表名
      */
-    public synchronized  <T> List<T> query(Class<T> clazz, String tableName) {
+    public synchronized <T> List<T> query(Class<T> clazz, String tableName) {
         return this.query(clazz, tableName, null);
     }
+
     /**
      * 兼容模式查询数据库
+     *
      * @param clazz        表格对象
      * @param tableName    表名
      * @param whereBulider 条件
      */
-    public synchronized  <T> List<T> query(Class<T> clazz, String tableName, WhereBulider whereBulider) {
+    public synchronized <T> List<T> query(Class<T> clazz, String tableName, WhereBulider whereBulider) {
         dbWorker.openOnlyReadDataBase();
         SQLiteDatabase sqLiteDatabase = dbWorker.getSqLiteDatabase();
         if (!dbWorker.havetable(tableName, sqLiteDatabase)) {
@@ -174,6 +179,7 @@ public class CustomerDbHelper {
         }
         return list;
     }
+
     /**
      * 用于兼容模式
      */

@@ -5,8 +5,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.zyq.simplestore.imp.BaseSQLiteOpenHelper;
 import com.zyq.simplestore.log.LightLog;
 
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,35 +18,41 @@ import java.util.List;
  * 数据库执行者（可并发访问）
  */
 public class DbWorker {
-    public SQLiteOpenHelper dbHelper;
+    public BaseSQLiteOpenHelper dbHelper;
     public Application application;
     public SQLiteDatabase sqLiteDatabase;
-    public static boolean openMaping=false;//开启主键外键多表查询为内连接（开启会影响数据库读写速度）
-    public  DbWorker(SQLiteOpenHelper dbHelper,Application application){
-        this.dbHelper=dbHelper;
-        this.application=application;
+    public static boolean openMaping = false;//开启主键外键多表查询为内连接（开启会影响数据库读写速度）
+
+    public DbWorker(BaseSQLiteOpenHelper dbHelper, Application application) {
+        this.dbHelper = dbHelper;
+        this.application = application;
+        if (this.dbHelper == null) {
+            this.dbHelper = DBHelper.newInstance(application);
+        }
     }
+
     /**
      * 打开可读写数据局
      */
     public synchronized boolean openDataBase() {
         if (dbHelper == null)
-            dbHelper = new DBHelper(application);
-        if(sqLiteDatabase!=null&&sqLiteDatabase.isOpen()){
-            return  false;
+            dbHelper = DBHelper.newInstance(application);
+        if (sqLiteDatabase != null && sqLiteDatabase.isOpen()) {
+            return false;
         }
         sqLiteDatabase = dbHelper.getWritableDatabase();
-        return  true;
+        return true;
     }
+
 
     /**
      * 打开只读数据库
      */
     public synchronized boolean openOnlyReadDataBase() {
         if (dbHelper == null)
-            dbHelper = new DBHelper(application);
-        if(sqLiteDatabase!=null&&sqLiteDatabase.isOpen()){
-            return  false;
+            dbHelper = DBHelper.newInstance(application);
+        if (sqLiteDatabase != null && sqLiteDatabase.isOpen()) {
+            return false;
         }
         sqLiteDatabase = dbHelper.getReadableDatabase();
         return true;
@@ -51,18 +60,18 @@ public class DbWorker {
 
     /**
      * 获取数据库
+     *
      * @return
      */
-    public SQLiteDatabase getSqLiteDatabase(){
+    public SQLiteDatabase getSqLiteDatabase() {
         return sqLiteDatabase;
     }
 
     /**
-     *
      * @return
      */
     public SQLiteOpenHelper getHelper() {
-        return dbHelper == null ? dbHelper = new DBHelper(application) : dbHelper;
+        return dbHelper == null ? dbHelper = DBHelper.newInstance(application) : dbHelper;
     }
 
     public synchronized boolean execSQL(String sql, String... value) {
@@ -71,26 +80,29 @@ public class DbWorker {
             return false;
         }
         openDataBase();
-        return execSQL(getSqLiteDatabase(),sql,value);
+        return execSQL(getSqLiteDatabase(), sql, value);
     }
-    public synchronized boolean execSQL(SQLiteOpenHelper dbHelper,String sql, String... value) {
+
+    public synchronized boolean execSQL(SQLiteOpenHelper dbHelper, String sql, String... value) {
         if (dbHelper == null) {
             LightLog.e(" save file error : sqLiteDatabase is null");
             return false;
         }
         try {
-            return execSQL(  dbHelper.getReadableDatabase(),sql,value);
-        }catch (Exception e){
+            return execSQL(dbHelper.getReadableDatabase(), sql, value);
+        } catch (Exception e) {
             LightLog.E(e.getMessage());
         }
-       return  false;
+        return false;
     }
+
     /**
      * 兼容模式执行自定义Sql语句
+     *
      * @param sql
      * @param value
      */
-    public synchronized boolean execSQL(SQLiteDatabase sqLiteDatabase,String sql, String... value) {
+    public synchronized boolean execSQL(SQLiteDatabase sqLiteDatabase, String sql, String... value) {
         LightLog.i(sql);
         try {
             if (value != null && value.length > 0) {
@@ -106,6 +118,7 @@ public class DbWorker {
         }
         return true;
     }
+
     /**
      * 判断当前表是否存在
      */
@@ -138,6 +151,7 @@ public class DbWorker {
             }
         }
     }
+
     /**
      * 获取当前表的所有列
      */
@@ -162,6 +176,7 @@ public class DbWorker {
         }
         return mColumns;
     }
+
     /**
      * 自动更新字段（只支持拓展增加）
      * 该方法只会check模型与数据库字段名并不会检查字段类型不可更改主键
@@ -185,6 +200,7 @@ public class DbWorker {
             }
         }
     }
+
     /**
      * 探测模型字段是否在表中
      */
@@ -212,6 +228,7 @@ public class DbWorker {
             return SerializeManager.getInstance().praseReferenceClass(cursor.getBlob(index), clazz);
         }
     }
+
     /**
      * 用于兼容模式以数据库表字段为蓝本过滤模型字段
      */

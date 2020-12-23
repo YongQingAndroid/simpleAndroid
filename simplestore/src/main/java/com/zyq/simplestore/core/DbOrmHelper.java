@@ -7,8 +7,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
+import com.zyq.simplestore.imp.BaseSQLiteOpenHelper;
+import com.zyq.simplestore.imp.DbColumn;
 import com.zyq.simplestore.log.LightLog;
 
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,20 +24,22 @@ import java.util.List;
  * 优化映射关系数据为异步查询，返回集合对象使用到映射数据时才会触发数据库条件搜索
  * 映射子查询不可用于兼容老数据库表
  * 作者：zyq
+ *
  * @author zyq
  */
 public class DbOrmHelper {
     private static DbOrmHelper self;
     private static Application context;
     private DbWorker dbWorker;
+
     public DbOrmHelper() {
-        dbWorker=new DbWorker(null,getContext());
+        dbWorker = new DbWorker(null, getContext());
     }
 
     /**
      * @param helper 需要兼容到老数据库是初始化SQLiteOpenHelper
      */
-    public void initSQLiteOpenHelper(SQLiteOpenHelper helper) {
+    public void initSQLiteOpenHelper(BaseSQLiteOpenHelper helper) {
         this.dbWorker.dbHelper = helper;
     }
 
@@ -46,8 +52,9 @@ public class DbOrmHelper {
         return self;
     }
 
-
-
+    public static String getDbPath() {
+        return DBHelper.db_name;
+    }
 
     /**
      * @param appcontext 上下文
@@ -63,7 +70,6 @@ public class DbOrmHelper {
     public static void initSdk() throws Exception {
         context = (Application) Class.forName("android.app.ActivityThread").getMethod("currentApplication").invoke(null, (Object[]) null);
     }
-
 
 
     private Application getContext() {
@@ -138,7 +144,7 @@ public class DbOrmHelper {
                     int index = cursor.getColumnIndex(name);
                     if (index == -1)
                         continue;
-                    Object myobj =dbWorker.getvalue(cursor, field.getType(), index);
+                    Object myobj = dbWorker.getvalue(cursor, field.getType(), index);
 
                     if (myobj != null)
                         field.set(item, myobj);
@@ -276,7 +282,7 @@ public class DbOrmHelper {
      * @param value
      */
     public void executeSql(String sql, String... value) {
-        dbWorker.execSQL(sql,value);
+        dbWorker.execSQL(sql, value);
     }
 
 
@@ -302,12 +308,12 @@ public class DbOrmHelper {
         if (tab_msg.getPrimaryKey() == null) {
             throw new RuntimeException(tab_msg.getTableName() + "no primarykey not limit save");
         }
-        SQLiteStatement  statement =null;
+        SQLiteStatement statement = null;
         try {
             dbWorker.openDataBase();
             verification_tab(clazz);
             dbWorker.getSqLiteDatabase().beginTransaction();
-            statement =   dbWorker.getSqLiteDatabase().compileStatement(DbPraseClazz.getInstent().getsaveSql(clazz));
+            statement = dbWorker.getSqLiteDatabase().compileStatement(DbPraseClazz.getInstent().getsaveSql(clazz));
             if (islist) {
                 List list = (List) object;
                 for (Object item : list) {
@@ -322,7 +328,7 @@ public class DbOrmHelper {
         } finally {
             if (statement != null)
                 statement.close();
-            if ( dbWorker.getSqLiteDatabase() != null) {
+            if (dbWorker.getSqLiteDatabase() != null) {
                 dbWorker.getSqLiteDatabase().endTransaction();
                 dbWorker.getSqLiteDatabase().close();
             }
@@ -351,6 +357,18 @@ public class DbOrmHelper {
         }
     }
 
+
+    public void importDbFile(InputStream stream) throws Exception {
+        FileOutputStream fos = new FileOutputStream(getInstent().dbWorker.dbHelper.getDbPath());
+        byte[] buffer = new byte[2048];
+        int count = 0;
+        while ((count = stream.read(buffer)) > 0) {
+            fos.write(buffer, 0, count);
+        }
+        fos.flush();
+        fos.close();
+        stream.close();
+    }
     /**
      * 拓展兼容原有数据库
      * 兼容其他第三方数据库框架以及原生android数据库接口
