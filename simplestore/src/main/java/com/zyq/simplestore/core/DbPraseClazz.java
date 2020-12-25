@@ -4,20 +4,26 @@ import android.database.sqlite.SQLiteStatement;
 
 
 import com.zyq.simplestore.imp.DbIgnore;
-import com.zyq.simplestore.imp.DbMaping;
 import com.zyq.simplestore.imp.DbPrimaryKey;
 import com.zyq.simplestore.imp.DbTableName;
+import com.zyq.simplestore.imp.DbToMany;
+import com.zyq.simplestore.imp.DbToOne;
 import com.zyq.simplestore.log.LightLog;
 
+import java.io.File;
+import java.lang.annotation.Documented;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * 字段反射处理类
+ *
  * @author zyq
  */
 public class DbPraseClazz {
@@ -51,25 +57,25 @@ public class DbPraseClazz {
         int size = fields.length;
         for (int i = 0; i < size; i++) {
             Field myfield = fields[i];
-            String typeValue=getColumn(myfield);
+            String typeValue = getColumn(myfield);
             if (isPrimaryKey(myfield)) {
-                if(Integer.class.isAssignableFrom(myfield.getType()) || int.class.isAssignableFrom(myfield.getType())){
+                if (Integer.class.isAssignableFrom(myfield.getType()) || int.class.isAssignableFrom(myfield.getType())) {
                     DbPrimaryKey myfieldAnnotation = myfield.getAnnotation(DbPrimaryKey.class);
-                    if(DbPrimaryKey.AUTOINCREMENT.equalsIgnoreCase(myfieldAnnotation.value())){
+                    if (DbPrimaryKey.AUTOINCREMENT.equalsIgnoreCase(myfieldAnnotation.value())) {
                         sql.append(myfield.getName());
                         sql.append(" INTEGER ");
                         sql.append(" PRIMARY KEY");
                         sql.append(" AUTOINCREMENT ");
-                    }else {
+                    } else {
                         sql.append(typeValue);
                         sql.append(" PRIMARY KEY");
                     }
-                }else{
+                } else {
                     sql.append(typeValue);
                     sql.append(" PRIMARY KEY");
                 }
                 ormTableBean.setPrimaryKey(myfield);
-            }else{
+            } else {
                 sql.append(typeValue);
             }
             if (i + 1 == size) {
@@ -82,11 +88,15 @@ public class DbPraseClazz {
         return sql.toString();
     }
 
+    public OrmTableBean getTableMsg(Class clazz, Field... fieldArgs) {
+        return getTableMsg(clazz, null, fieldArgs);
+    }
+
     /**
      * 根据模型获取表信息
      */
-    public OrmTableBean getTableMsg(Class clazz) {
-        OrmTableBean mOrmTableBean;
+    public OrmTableBean getTableMsg(Class clazz, OrmTableBean parentOrm, Field... fieldArgs) {
+        OrmTableBean mOrmTableBean = new OrmTableBean();
         if (tables.containsKey(clazz)) {
             return tables.get(clazz);
         }
@@ -96,7 +106,7 @@ public class DbPraseClazz {
         Field primaryField = null;
         Field defult_primaryField = null;
         int size = fields.length;
-        Map<String, Field> mapping = new HashMap<>();
+        Map<String, OrmTableBean> mapping = new HashMap<>();
         for (int i = 0; i < size; i++) {
             Field myfield = fields[i];
             myfield.setAccessible(true);//跳过安全检查调高响应速度
@@ -109,7 +119,7 @@ public class DbPraseClazz {
             if (myfield.getName().equalsIgnoreCase("id"))
                 defult_primaryField = myfield;
             myfield.setAccessible(true);
-            if (praseMapping(myfield, mapping)){
+            if (praseMapping(mOrmTableBean, myfield, mapping)) {
                 continue;
             }
             table_field.add(myfield);
@@ -118,7 +128,11 @@ public class DbPraseClazz {
             throw new RuntimeException("can not get " + getTableName(clazz) + "TableMsg");
         }
         Field[] myfields = table_field.toArray(new Field[table_field.size()]);
-        mOrmTableBean = new OrmTableBean(getTableName(clazz), myfields);
+        mOrmTableBean.setTableClass(clazz).setTableName(getTableName(clazz)).setFields(myfields);
+        if (fieldArgs != null && fieldArgs.length > 0) {
+            mOrmTableBean.setOwerField(fieldArgs[0]);
+            mOrmTableBean.setParentOrm(parentOrm);
+        }
         /**解析关系**/
         if (mapping.size() > 0) {
             mOrmTableBean.setMaping(mapping);
@@ -203,25 +217,51 @@ public class DbPraseClazz {
 
     /**
      * 根据表信息获取预编译保存sql语句
-     */
-    public String getUpdateSql(OrmTableBean ormTableBean) throws Exception {
-        StringBuffer sql = new StringBuffer();
-        sql.append("UPDATE ");
-        sql.append(ormTableBean.getTableName());
-        sql.append(" SET ");
-        int size = ormTableBean.getFields().length;
-        for (int i = 0; i < size; i++) {
-            Field field = ormTableBean.getFields()[i];
-            sql.append(field.getName());
-            sql.append("= ?");
-        }
-        return sql.toString();
-    }
+     //     */
+//    public String getUpdateSql(OrmTableBean ormTableBean) throws Exception {
+//        StringBuffer sql = new StringBuffer();
+//        sql.append("UPDATE ");
+//        sql.append(ormTableBean.getTableName());
+//        sql.append(" SET ");
+//        int size = ormTableBean.getFields().length;
+//        for (int i = 0; i < size; i++) {
+//            Field field = ormTableBean.getFields()[i];
+//            sql.append(field.getName());
+//            sql.append("= ?");
+//        }
+//        return sql.toString();
+//    }
 
     /**
      * 绑定预编语句value 执行插入
      */
-    public void saveData(SQLiteStatement statement, Object obj, Class TableClass) throws Exception {
+    public void saveData(DbWorker dbWorker, Object object, Class TableClass) throws Exception {
+        if (object == null) {
+            return;
+        }
+        SQLiteStatement statement = dbWorker.getSqLiteDatabase().compileStatement(DbPraseClazz.getInstent().getsaveSql(TableClass));
+        if (object instanceof List) {
+            List list = (List) object;
+            for (Object item : list) {
+                saveDataExe(dbWorker, statement, item, TableClass);
+            }
+            statement.close();
+        } else {
+            saveDataExe(dbWorker, statement, object, TableClass);
+            statement.close();
+        }
+    }
+
+    /**
+     * 执行数据插入更新
+     *
+     * @param dbWorker
+     * @param statement
+     * @param obj
+     * @param TableClass
+     * @throws Exception
+     */
+    public void saveDataExe(DbWorker dbWorker, SQLiteStatement statement, Object obj, Class TableClass) throws Exception {
         OrmTableBean ormTableBean = getTableMsg(TableClass);
         if (ormTableBean == null)
             throw new RuntimeException("Table does not exist the bean object is invalid");
@@ -232,6 +272,13 @@ public class DbPraseClazz {
             bindStatement(statement, i, myclass, field, obj);
         }
         statement.executeInsert();
+        if (ormTableBean.haveMaping()) {
+            OrmTableBean itemtable = null;
+            for (String key : ormTableBean.getMaping().keySet()) {
+                itemtable = ormTableBean.getMaping().get(key);
+                saveData(dbWorker, itemtable.getValue(obj, itemtable.getOwerField()), itemtable.getTableClass());
+            }
+        }
     }
 
     /**
@@ -257,6 +304,8 @@ public class DbPraseClazz {
      * 解析引用对象
      */
     private void praseReferenceObject(Object obj, SQLiteStatement statement, int i) throws Exception {
+        if (obj == null)
+            return;
         statement.bindBlob(i + 1, SerializeManager.getInstance().object2btye(obj));
 //         if (obj instanceof List) {
 //            statement.bindBlob(i + 1, objectToByte((ArrayList) obj));/**必须指明类型否则会反序列化失败*/
@@ -266,6 +315,7 @@ public class DbPraseClazz {
 //            statement.bindBlob(i + 1, objectToByte(obj));
 //        }
     }
+
     /**
      * 获取表字段名称及类型
      */
@@ -289,22 +339,35 @@ public class DbPraseClazz {
      */
     private boolean isPrimaryKey(Field field) {
         Object o = field.getAnnotation(DbPrimaryKey.class);
-        return o != null||"id".equalsIgnoreCase(field.getName());
+        return o != null || "id".equalsIgnoreCase(field.getName());
     }
 
     /**
      * 判断映射关系
      */
-    private boolean praseMapping(Field field, Map<String, Field> map) {
-        if(!DbWorker.openMaping){
+    private boolean praseMapping(OrmTableBean parentOrm, Field field, Map<String, OrmTableBean> map) {
+
+        if (!DbWorker.openMaping) {
             return false;
         }
-        Object o = field.getAnnotation(DbMaping.class);
+        Object o = field.getAnnotation(DbToMany.class);
+        Object o2 = field.getAnnotation(DbToOne.class);
         if (o != null) {
-//            DbMaping mapping = (DbMaping) o;
-            map.put(field.getName(), field);
+            map.put(field.getName(), getTableMsg(getClassType(field), parentOrm, field));
+            return true;
+        } else if (o2 != null) {
+            map.put(field.getName(), getTableMsg(getClassType(field), parentOrm, field));
             return true;
         }
         return false;
+    }
+
+    private Class getClassType(Field field) {
+        if (List.class.isAssignableFrom(field.getType())) {
+            ParameterizedType type = (ParameterizedType) field.getGenericType();
+            Class<?> actualTypeArgument = (Class<?>) type.getActualTypeArguments()[0];
+            return actualTypeArgument;
+        }
+        return field.getType();
     }
 }

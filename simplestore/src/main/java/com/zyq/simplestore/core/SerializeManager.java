@@ -1,32 +1,33 @@
 package com.zyq.simplestore.core;
 
 import com.alibaba.fastjson.JSON;
+
 import java.lang.reflect.Type;
 
 public class SerializeManager {
-    private  static SerializeManager self=null;
-    public static  synchronized  SerializeManager getInstance() {
-        if(self==null){
+    private static SerializeManager self = null;
+
+    public static synchronized SerializeManager getInstance() {
+        if (self == null) {
             new SerializeManager();
         }
         return self;
     }
 
-    public byte[] object2btye(Object o){
-       return JSON.toJSONBytes(o);
-    }
-    public Object byte2object( byte[] bytes, Type clazz){
-        return JSON.parseObject(bytes,clazz);
+    public byte[] object2btye(Object o) {
+        return JSON.toJSONBytes(o);
     }
 
-
+    public Object byte2object(byte[] bytes, Type clazz) {
+        return JSON.parseObject(bytes, clazz);
+    }
 
 
     /**
      * 解析引用对象
      */
     public Object praseReferenceClass(byte[] bytes, Class clazz) {
-        return byte2object(bytes,clazz);
+        return byte2object(bytes, clazz);
     }
 //    /**
 //     * 序列化对象

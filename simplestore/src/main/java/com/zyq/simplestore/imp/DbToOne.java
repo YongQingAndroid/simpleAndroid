@@ -7,10 +7,8 @@ import java.lang.annotation.Target;
 
 /**
  * 多表连接（注意删除主表的数据被连接的子表也会被删除）
- * **/
+ **/
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DbMaping {
-    String c1() default "";
-    String c2() default "";
+public @interface DbToOne {
 }

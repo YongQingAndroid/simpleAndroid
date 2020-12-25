@@ -21,7 +21,7 @@ public class DbWorker {
     public BaseSQLiteOpenHelper dbHelper;
     public Application application;
     public SQLiteDatabase sqLiteDatabase;
-    public static boolean openMaping = false;//开启主键外键多表查询为内连接（开启会影响数据库读写速度）
+    public static boolean openMaping = true;//开启主键外键多表查询为内连接（开启会影响数据库读写速度）
 
     public DbWorker(BaseSQLiteOpenHelper dbHelper, Application application) {
         this.dbHelper = dbHelper;
@@ -225,7 +225,10 @@ public class DbWorker {
         } else if (String.class.isAssignableFrom(clazz)) {
             return cursor.getString(index);
         } else {
-            return SerializeManager.getInstance().praseReferenceClass(cursor.getBlob(index), clazz);
+            byte[] bytes = cursor.getBlob(index);
+            if (bytes == null)
+                return null;
+            return SerializeManager.getInstance().praseReferenceClass(bytes, clazz);
         }
     }
 

@@ -19,14 +19,14 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme">
         <activity android:name="com.zyq.simpleandroid.Main2Activity">
+
+        </activity>
+        <activity android:name="com.zyq.simpleandroid.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity android:name="com.zyq.simpleandroid.MainActivity">
-
         </activity>
         <activity android:name="com.cmic.sso.sdk.activity.LoginAuthActivity"/>
     </application>

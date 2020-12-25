@@ -4,18 +4,18 @@ import android.app.Application;
 
 import android.database.Cursor;
 
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
 import com.zyq.simplestore.imp.BaseSQLiteOpenHelper;
-import com.zyq.simplestore.imp.DbColumn;
 import com.zyq.simplestore.log.LightLog;
 
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 对象级数据库，面向对象的数据库存储
@@ -113,33 +113,35 @@ public class DbOrmHelper {
      * @param mClass       数据模型 即返回数据集合的模型
      * @param tableName    表名
      * @param whereBulider 查找条件
-     *                     多表联合查询优化为子查询
-     *                     优化重写映射关系集合多表联合查询的时间复杂度理论趋近于零
      */
     public <M> List<M> query(Class<M> mClass, String tableName, WhereBulider whereBulider) {
         OrmTableBean ormTableBean = DbPraseClazz.getInstent().getTableMsg(mClass);
-        Field[] fields = ormTableBean.getFields();
-        List list = new ArrayList<>();
         dbWorker.openOnlyReadDataBase();
-        verification_tab(mClass);
-        StringBuffer sql = new StringBuffer();
-        sql.append("select * from ");
-        sql.append(tableName);
-        if (whereBulider != null) {
-            sql.append(whereBulider.toString());
-        } else {
-            whereBulider = WhereBulider.creat();
+        verification_tab(ormTableBean);
+        return (List<M>) queryData(ormTableBean, whereBulider, null);
+    }
+
+    private Object queryData(OrmTableBean ormTableBean, WhereBulider whereBulider, Object owerObj) {
+        String sql = "";
+        Field[] fields = ormTableBean.getFields();
+        boolean isList = ormTableBean.isList();
+        if (whereBulider == null) {
+            SqlBuilder sqlBuilder = SqlBuilder.newInstance().setTableMsg(ormTableBean);
+            sql = sqlBuilder.getSqlString();
+            whereBulider = sqlBuilder.getWhereBulider(owerObj);
+            sql += whereBulider.toString();
         }
-        LightLog.i(sql.toString());
+        List list = new ArrayList();
+        Object result = null;
         int size = fields.length;
-        Cursor cursor = dbWorker.getSqLiteDatabase().rawQuery(sql.toString(), whereBulider.getvalue());
+        LightLog.i(sql);
+        Cursor cursor = dbWorker.getSqLiteDatabase().rawQuery(sql, whereBulider.getvalue());
         try {
-            long sart = System.currentTimeMillis();
             while (cursor.moveToNext()) {
-                Object item = newInstance(mClass);
+                Object item = newInstance(ormTableBean.getTableClass());
                 for (int i = 0; i < size; i++) {
                     Field field = fields[i];
-//                    field.setAccessible(true);//跳过安全检查可以提高速度
+                    field.setAccessible(true);//跳过安全检查可以提高速度
                     String name = field.getName();
                     int index = cursor.getColumnIndex(name);
                     if (index == -1)
@@ -149,9 +151,21 @@ public class DbOrmHelper {
                     if (myobj != null)
                         field.set(item, myobj);
                 }
+                if (ormTableBean.haveMaping()) {
+                    for (String key : ormTableBean.getMaping().keySet()) {
+                        OrmTableBean itemOrm = ormTableBean.getMaping().get(key);
+                        Object childObj = queryData(itemOrm, null, item);
+                        itemOrm.getOwerField().set(item, childObj);
+                    }
+
+                }
                 list.add(item);
             }
-            LightLog.i("耗时" + (System.currentTimeMillis() - sart) + "ms");
+            if (isList) {
+                result = list;
+            } else if (list.size() > 0) {
+                result = list.get(0);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -159,14 +173,21 @@ public class DbOrmHelper {
                 cursor.close();
             dbWorker.getSqLiteDatabase().close();
         }
-        return list;
+        return result;
     }
 
     /**
      * 实例化对象
+     * 增加对有参构造方法的支持
      */
-    private <M> M newInstance(Class<M> mClass) throws InstantiationException, IllegalAccessException {
-        return mClass.newInstance();
+    private <M> M newInstance(Class<M> mClass) throws Exception {
+        Constructor<?>[] constructors = mClass.getConstructors();
+        Class[] aClass = constructors[0].getParameterTypes();
+        List<Object> argArray = new ArrayList<>();
+        for (Class item : aClass) {
+            argArray.add(null);
+        }
+        return (M) constructors[0].newInstance(argArray.toArray());
     }
 
     /**
@@ -308,26 +329,17 @@ public class DbOrmHelper {
         if (tab_msg.getPrimaryKey() == null) {
             throw new RuntimeException(tab_msg.getTableName() + "no primarykey not limit save");
         }
-        SQLiteStatement statement = null;
+
         try {
             dbWorker.openDataBase();
-            verification_tab(clazz);
+            verification_tab(tab_msg);
             dbWorker.getSqLiteDatabase().beginTransaction();
-            statement = dbWorker.getSqLiteDatabase().compileStatement(DbPraseClazz.getInstent().getsaveSql(clazz));
-            if (islist) {
-                List list = (List) object;
-                for (Object item : list) {
-                    DbPraseClazz.getInstent().saveData(statement, item, clazz);
-                }
-            } else {
-                DbPraseClazz.getInstent().saveData(statement, object, clazz);
-            }
+            DbPraseClazz.getInstent().saveData(dbWorker, object, clazz);
+
             dbWorker.getSqLiteDatabase().setTransactionSuccessful();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (statement != null)
-                statement.close();
             if (dbWorker.getSqLiteDatabase() != null) {
                 dbWorker.getSqLiteDatabase().endTransaction();
                 dbWorker.getSqLiteDatabase().close();
@@ -335,12 +347,27 @@ public class DbOrmHelper {
         }
     }
 
+
     /**
-     * 校验字段
-     * 检查表格字段对应关系
-     * 检查表格是否存在
+     * 增加验证外键表格准确性
      *
-     * @param clazz 关联表的对象
+     * @param ormTableBean
+     */
+    private void verification_tab(OrmTableBean ormTableBean) {
+        verification_tab(ormTableBean.getTableClass());
+        if (ormTableBean.haveMaping()) {
+            Map<String, OrmTableBean> maps = ormTableBean.getMaping();
+            for (String key : maps.keySet()) {
+                verification_tab(maps.get(key));
+            }
+        }
+
+    }
+
+    /**
+     * 验证表格与模型一致性
+     *
+     * @param clazz
      */
     private void verification_tab(Class clazz) {
         OrmTableBean mOrmTableBean = DbPraseClazz.getInstent().getTableMsg(clazz);

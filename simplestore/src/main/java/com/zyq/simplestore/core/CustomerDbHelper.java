@@ -93,14 +93,14 @@ public class CustomerDbHelper {
                 sql.append(whereBulider.toString());
             }
             SQLiteStatement statement = sqLiteDatabase.compileStatement(sql.toString());
-            if (islist) {
-                List list = (List) object;
-                for (Object item : list) {
-                    DbPraseClazz.getInstent().saveData(statement, item, clazz);
-                }
-            } else {
-                DbPraseClazz.getInstent().saveData(statement, object, clazz);
-            }
+//            if (islist) {
+//                List list = (List) object;
+//                for (Object item : list) {
+//                    DbPraseClazz.getInstent().saveData(statement, item, clazz);
+//                }
+//            } else {
+//                DbPraseClazz.getInstent().saveData(statement, object, clazz);
+//            }
             sqLiteDatabase.setTransactionSuccessful();
         } catch (Exception e) {
             e.printStackTrace();
