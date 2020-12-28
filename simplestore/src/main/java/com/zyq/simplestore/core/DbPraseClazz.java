@@ -234,22 +234,30 @@ public class DbPraseClazz {
 
     /**
      * 绑定预编语句value 执行插入
+     * 捕获异常并抛出关闭预编译
      */
     public void saveData(DbWorker dbWorker, Object object, Class TableClass) throws Exception {
         if (object == null) {
             return;
         }
         SQLiteStatement statement = dbWorker.getSqLiteDatabase().compileStatement(DbPraseClazz.getInstent().getsaveSql(TableClass));
-        if (object instanceof List) {
-            List list = (List) object;
-            for (Object item : list) {
-                saveDataExe(dbWorker, statement, item, TableClass);
+        try {
+            if (object instanceof List) {
+                List list = (List) object;
+                for (Object item : list) {
+                    saveDataExe(dbWorker, statement, item, TableClass);
+                }
+                statement.close();
+            } else {
+                saveDataExe(dbWorker, statement, object, TableClass);
+                statement.close();
             }
-            statement.close();
-        } else {
-            saveDataExe(dbWorker, statement, object, TableClass);
+        } catch (Exception e) {
+            throw e;
+        } finally {
             statement.close();
         }
+
     }
 
     /**
@@ -362,6 +370,11 @@ public class DbPraseClazz {
         return false;
     }
 
+    /***
+     * 解析Field对应的表数据类型
+     * @param field
+     * @return
+     */
     private Class getClassType(Field field) {
         if (List.class.isAssignableFrom(field.getType())) {
             ParameterizedType type = (ParameterizedType) field.getGenericType();
