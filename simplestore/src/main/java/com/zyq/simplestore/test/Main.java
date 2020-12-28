@@ -11,6 +11,8 @@ import com.zyq.simplestore.imp.DbPrimaryKey;
 import com.zyq.simplestore.imp.DbTableName;
 import com.zyq.simplestore.imp.DbToOne;
 
+import java.util.List;
+
 public class Main {
     void test() {
         //key-value存储**********************************************
@@ -62,8 +64,9 @@ public class Main {
         @DbColumn("cid")
         String cid;
 
+        @DbToMany(c1 = "id",c2 = "cid")
         @DbToOne
-        TableBean1 msg;
+        List<TableBean1> msg;
     }
 
     static class TableBean1 {

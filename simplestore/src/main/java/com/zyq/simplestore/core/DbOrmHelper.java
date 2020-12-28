@@ -141,8 +141,7 @@ public class DbOrmHelper {
                 Object item = newInstance(ormTableBean.getTableClass());
                 for (int i = 0; i < size; i++) {
                     Field field = fields[i];
-                    field.setAccessible(true);//跳过安全检查可以提高速度
-                    String name = field.getName();
+                    String name = OrmTableBean.getDbColumnName(field);
                     int index = cursor.getColumnIndex(name);
                     if (index == -1)
                         continue;
@@ -226,8 +225,7 @@ public class DbOrmHelper {
         }
         WhereBulider whereBulider = WhereBulider.creat();
         try {
-//          ormTableBean.getPrimaryKey().setAccessible(true);
-            whereBulider.where(ormTableBean.getPrimaryKey().getName() + "=?", String.valueOf(ormTableBean.getPrimaryKey().get(object)));
+            whereBulider.where(OrmTableBean.getDbColumnName(ormTableBean.getPrimaryKey()) + "=?", String.valueOf(ormTableBean.getPrimaryKey().get(object)));
             this.remove(object.getClass(), whereBulider);
         } catch (Exception e) {
             e.printStackTrace();
@@ -242,7 +240,7 @@ public class DbOrmHelper {
     public void remove(Class clazz) {
         OrmTableBean ormTableBean = DbPraseClazz.getInstent().getTableMsg(clazz);
         if (ormTableBean == null) {
-            LightLog.e("not find Table mapping " + clazz.getName());
+            LightLog.e("not find Table mapping " + ormTableBean.getTableName());
         }
         StringBuffer sql = new StringBuffer();
         sql.append("delete from ");

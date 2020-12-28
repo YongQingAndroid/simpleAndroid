@@ -23,6 +23,7 @@ public class OrmTableBean {
     private boolean isCheckColumn = false;
     private Field mField;//当前成员变量（开启关系表格时启用）
     private OrmTableBean parentOrm;
+    private static Map<Field, String> mColumnName = new HashMap<>();
 
     public OrmTableBean setTableClass(Class tableClass) {
         this.tableClass = tableClass;
@@ -76,13 +77,20 @@ public class OrmTableBean {
      * @param field
      * @return
      */
-    public String getDbColumnName(Field field) {
+    public static String getDbColumnName(Field field) {
+        if (mColumnName.containsKey(field)) {
+            return mColumnName.get(field);
+        }
+        String name = "";
         Object o = field.getAnnotation(DbColumn.class);
         if (o != null) {
             DbColumn mDbColumn = (DbColumn) o;
-            return mDbColumn.value();
+            name = mDbColumn.value();
+        } else {
+            name = field.getName();
         }
-        return field.getName();
+        mColumnName.put(field, name);
+        return name;
     }
 
 

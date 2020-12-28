@@ -205,7 +205,7 @@ public class DbWorker {
      * 探测模型字段是否在表中
      */
     public boolean haveColumn(Field field, List<String> columns) {
-        String name = field.getName();
+        String name = OrmTableBean.getDbColumnName(field);
         for (String item : columns) {
             if (name.equals(item))
                 return true;

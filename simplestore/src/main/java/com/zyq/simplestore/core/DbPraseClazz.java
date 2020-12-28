@@ -62,7 +62,7 @@ public class DbPraseClazz {
                 if (Integer.class.isAssignableFrom(myfield.getType()) || int.class.isAssignableFrom(myfield.getType())) {
                     DbPrimaryKey myfieldAnnotation = myfield.getAnnotation(DbPrimaryKey.class);
                     if (DbPrimaryKey.AUTOINCREMENT.equalsIgnoreCase(myfieldAnnotation.value())) {
-                        sql.append(myfield.getName());
+                        sql.append(OrmTableBean.getDbColumnName(myfield));
                         sql.append(" INTEGER ");
                         sql.append(" PRIMARY KEY");
                         sql.append(" AUTOINCREMENT ");
@@ -198,7 +198,7 @@ public class DbPraseClazz {
         int size = ormTableBean.getFields().length;
         for (int i = 0; i < size; i++) {
             Field field = ormTableBean.getFields()[i];
-            sql.append(field.getName());
+            sql.append(OrmTableBean.getDbColumnName(field));
             field.setAccessible(true);
             databulider.append("?");
             if (i + 1 == size) {
@@ -331,7 +331,7 @@ public class DbPraseClazz {
         } else {
             sqltype = "BLOB";
         }
-        return field.getName() + " " + sqltype;
+        return OrmTableBean.getDbColumnName(field) + " " + sqltype;
     }
 
     /**
@@ -339,7 +339,7 @@ public class DbPraseClazz {
      */
     private boolean isPrimaryKey(Field field) {
         Object o = field.getAnnotation(DbPrimaryKey.class);
-        return o != null || "id".equalsIgnoreCase(field.getName());
+        return o != null || "id".equalsIgnoreCase(OrmTableBean.getDbColumnName(field));
     }
 
     /**
@@ -353,10 +353,10 @@ public class DbPraseClazz {
         Object o = field.getAnnotation(DbToMany.class);
         Object o2 = field.getAnnotation(DbToOne.class);
         if (o != null) {
-            map.put(field.getName(), getTableMsg(getClassType(field), parentOrm, field));
+            map.put(OrmTableBean.getDbColumnName(field), getTableMsg(getClassType(field), parentOrm, field));
             return true;
         } else if (o2 != null) {
-            map.put(field.getName(), getTableMsg(getClassType(field), parentOrm, field));
+            map.put(OrmTableBean.getDbColumnName(field), getTableMsg(getClassType(field), parentOrm, field));
             return true;
         }
         return false;

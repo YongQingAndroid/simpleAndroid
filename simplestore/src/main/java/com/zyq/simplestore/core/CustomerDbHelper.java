@@ -159,7 +159,7 @@ public class CustomerDbHelper {
                 Object item = clazz.newInstance();
                 for (int i = 0; i < size; i++) {
                     Field field = ormTableBean.getFields()[i];
-                    String name = field.getName();
+                    String name = OrmTableBean.getDbColumnName(field);
                     int index = cursor.getColumnIndex(name);
                     if (index == -1)
                         continue;
