@@ -4,6 +4,7 @@ import com.zyq.simplestore.SimpleStore;
 import com.zyq.simplestore.core.CustomerDbHelper;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.simplestore.core.WhereBulider;
+import com.zyq.simplestore.core.WorkHandler;
 import com.zyq.simplestore.imp.DbColumn;
 import com.zyq.simplestore.imp.DbIgnore;
 import com.zyq.simplestore.imp.DbToMany;
@@ -26,6 +27,27 @@ public class Main {
         SimpleStore.praseKey("key").get(TestBean.class, obj -> {
 
         });
+
+        SimpleStore.getDbManager()
+                .query(TestBean.class)
+                .executeOn(WorkHandler.schedulerWorkThread())
+                .map(obj -> 123456)
+                .map(obj -> obj + "string")
+                .executeOn(WorkHandler.schedulerMainThread())
+                .map(obj -> Double.parseDouble("0.001"))
+                .getResult(new WorkHandler.ResultCallBack<Double>() {
+                    @Override
+                    public void onSuccess(Double obj) {
+
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+
+                    }
+                });
+
+
         //数据库操作**********************************************
         //
         TestBean obj1 = new TestBean();
@@ -64,7 +86,7 @@ public class Main {
         @DbColumn("cid")
         String cid;
 
-        @DbToMany(c1 = "id",c2 = "cid")
+        @DbToMany(c1 = "id", c2 = "cid")
         @DbToOne
         List<TableBean1> msg;
     }

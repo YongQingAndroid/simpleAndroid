@@ -1,5 +1,7 @@
 package com.zyq.simplestore;
+
 import com.alibaba.fastjson.JSON;
+import com.zyq.simplestore.core.DbManager;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.simplestore.core.TableCatch;
 import com.zyq.simplestore.core.ThreadPool;
@@ -10,30 +12,42 @@ import com.zyq.simplestore.log.LightLog;
 import java.util.List;
 
 public class SimpleStore {
+    static DbManager dbManager;
+
     /**
      * 储存
+     *
      * @param key
      * @param obj
      */
     public static void store(String key, Object obj) {
-        TableCatch.mapCatch.put(key,JSON.toJSONString(obj));
+        TableCatch.mapCatch.put(key, JSON.toJSONString(obj));
         ThreadPool.execute(() -> {
             DbOrmHelper.getInstent().save(new SimpleTable(key, obj));
         });
     }
+
     /**
      * 开启磁盘映射
      */
-    public static void openMmap(){
-         //涉及底层待实现
+    public static void openMmap() {
+        //涉及底层待实现
+    }
+
+    public static DbManager getDbManager() {
+        if (dbManager == null) {
+            dbManager = new DbManager();
+        }
+        return dbManager;
     }
 
     /**
      * 删除数据
+     *
      * @param key
      */
-    public static void remove(String key){
-        if(TableCatch.mapCatch.containsKey(key)){
+    public static void remove(String key) {
+        if (TableCatch.mapCatch.containsKey(key)) {
             TableCatch.mapCatch.remove(key);
         }
         DbOrmHelper.getInstent().remove(SimpleTable.class, WhereBulider.creat().where("key=?", key));
@@ -42,7 +56,7 @@ public class SimpleStore {
     /**
      * 清空数据
      */
-    public static void clear(){
+    public static void clear() {
         TableCatch.mapCatch.clear();
         DbOrmHelper.getInstent().remove(SimpleTable.class);
     }
@@ -65,19 +79,20 @@ public class SimpleStore {
 
         /**
          * 同步获取数据的值
+         *
          * @param type 数据类型
          * @param <T>
          * @return
          */
         public <T> T get(Class<T> type) {
             try {
-                if(TableCatch.mapCatch.containsKey(key)){
+                if (TableCatch.mapCatch.containsKey(key)) {
                     LightLog.I("From Memory");
-                    return  JSON.parseObject(TableCatch.mapCatch.get(key), type);
-                }else{
+                    return JSON.parseObject(TableCatch.mapCatch.get(key), type);
+                } else {
                     List<SimpleTable> result = DbOrmHelper.getInstent().query(SimpleTable.class, WhereBulider.creat().where("key=?", key));
                     if (result != null && result.size() > 0) {
-                        TableCatch.mapCatch.put(key,result.get(0).value);
+                        TableCatch.mapCatch.put(key, result.get(0).value);
                         return JSON.parseObject(result.get(0).value, type);
                     }
                 }
@@ -89,6 +104,7 @@ public class SimpleStore {
 
         /**
          * 异步获取数据的值
+         *
          * @param type
          * @param call
          * @param <T>
@@ -107,7 +123,7 @@ public class SimpleStore {
         String key;
         String value;
 
-       public SimpleTable() {
+        public SimpleTable() {
 
         }
 
