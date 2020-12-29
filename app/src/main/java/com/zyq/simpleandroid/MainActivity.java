@@ -4,14 +4,17 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import com.jfz.wealth.R;
 import com.zyq.simplestore.SimpleStore;
 import com.zyq.simplestore.core.DbOrmHelper;
+import com.zyq.simplestore.core.WorkHandler;
 import com.zyq.simplestore.imp.DbTableName;;
 import com.zyq.simplestore.imp.DbToMany;
 import com.zyq.simplestore.imp.DbToOne;
 import com.zyq.simplestore.log.LightLog;
+import com.zyq.simplestore.test.Main;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,10 +37,31 @@ public class MainActivity extends AppCompatActivity {
 //        TestOrm1 testOrm2 = new TestOrm1("1", "testLisa");
         testOrm.test = testOrm1;
         DbOrmHelper.getInstent().save(testOrm);
-        List<TestOrm> result = DbOrmHelper.getInstent().query(TestOrm.class);
-        LightLog.I(result.get(0).test.name);
+//        List<TestOrm> result = DbOrmHelper.getInstent().query(TestOrm.class);
+//        LightLog.I(result.get(0).test.name);
+
+        WorkHandler.from(DbOrmHelper.getInstent())
+                .executeOn(WorkHandler.schedulerWorkThread())
+                .map(dbOrmHelper -> dbOrmHelper.query(TestOrm.class))
+                .map(obj -> {
+                    LightLog.i("从数据库查询回调中切片取出" + obj.get(0).test.name);
+                    return "搜索到了" + obj.size() + "个数据";
+                })
+                .executeOn(WorkHandler.schedulerMainThread())
+                .setResult(new WorkHandler.ResultCallBack<String>() {
+                    @Override
+                    public void onSuccess(String obj) {
+                        LightLog.i("我是回调：" + obj);
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        LightLog.i("错误信息：" + e.getMessage());
+                    }
+                });
 
     }
+
 
     public void mClicktime(View view) {
 //        TimePickerManager.getInstance().showPicker(this, FormatState.YYYY, FormatState.MM,FormatState.DD,FormatState.HH,FormatState.mm.setJump(30));

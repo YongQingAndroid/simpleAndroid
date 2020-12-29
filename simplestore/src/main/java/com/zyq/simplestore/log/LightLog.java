@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  */
 public class LightLog {
     public static boolean isDebug = true;
-    private static final String TAG = "LightOrm";
+    private static final String TAG = "LightLog";
     private static int methodCount = 2;
     private static final char TOP_LEFT_CORNER = '╔';
     private static final char BOTTOM_LEFT_CORNER = '╚';
@@ -38,36 +38,38 @@ public class LightLog {
 
     public static void e(String arg) {
         if (isDebug)
-        E(arg);
+            E(arg);
     }
 
     public static void simpleI(String tag, String arg) {
         if (isDebug)
-        Log.i(tag, arg);
+            Log.i(tag, arg);
     }
 
     public static void simpleE(String tag, String arg) {
         if (isDebug)
-        Log.e(tag, arg);
+            Log.e(tag, arg);
     }
 
     public static void E(String arg) {
         if (isDebug)
-        simpleE(TAG, getRichTagString(arg).toString());
+            simpleE(TAG, getRichTagString(arg).toString());
     }
 
     public static void I(String arg) {
         if (isDebug)
-        simpleI(TAG, getRichTagString(arg).toString());
+            simpleI(TAG, getRichTagString(arg).toString());
     }
-   /***
-    * 获取封装之后的文本
-    * */
+
+    /***
+     * 获取封装之后的文本
+     * */
     private static StringBuilder getRichTagString(String arg) {
-        if(arg==null){
-            arg="NULL";
+        if (arg == null) {
+            arg = "NULL";
         }
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("---\b");
         ShowTopLine(stringBuilder);
         showThreadMsg(stringBuilder);
         ShowCenterLine(stringBuilder);
@@ -88,9 +90,10 @@ public class LightLog {
         stringBuilder.append(TOP_BORDER);
         stringBuilder.append("\n");
     }
+
     /**
      * 判断时候包含中文
-     * **/
+     **/
     public static boolean isContainChinese(String str) {
         Pattern p = Pattern.compile("[\u4e00-\u9fa5]");
         Matcher m = p.matcher(str);
@@ -99,9 +102,10 @@ public class LightLog {
         }
         return false;
     }
+
     /**
      * 显示长文本
-     * **/
+     **/
     private static void showArgMsg(String arg, StringBuilder stringBuilder) {
         int size = arg.length();
         int row_size = 60;
@@ -127,9 +131,10 @@ public class LightLog {
         }
         stringBuilder.append(BOTTOM_BORDER);
     }
+
     /**
      * 获取当前线程的信息
-     * */
+     */
     private static void showThreadMsg(StringBuilder stringBuilder) {
         stringBuilder.append(HORIZONTAL_LINE);
         stringBuilder.append("Thread    ");
@@ -137,9 +142,10 @@ public class LightLog {
         stringBuilder.append(Thread.currentThread().getName());
         stringBuilder.append("\n");
     }
+
     /**
      * 显示打印数据栈
-     * */
+     */
     private static void showPrintCodeLineString(int methodCount, StringBuilder stringBuilder) {
         StackTraceElement[] trace = Thread.currentThread().getStackTrace();
         int end = getStackOffset(trace) - 1;
@@ -188,23 +194,25 @@ public class LightLog {
 
     /**
      * 打印显示组合
-     * */
+     */
     private static void showMethodSpace(int i, StringBuilder stringBuilder) {
         for (int m = i; m < methodCount; m++) {
             stringBuilder.append("   ");
         }
         stringBuilder.append("∟");
     }
-   /**
-    * 获取类名
-    * */
+
+    /**
+     * 获取类名
+     */
     private static String getSimpleClassName(String name) {
         int lastIndex = name.lastIndexOf(".");
         return name.substring(lastIndex + 1);
     }
+
     /**
      * 打印Json日志 并自动格式化
-     * **/
+     **/
     public static void JSON(String arg) {
         StringBuilder stringBuilder = new StringBuilder();
         ShowTopLine(stringBuilder);
@@ -222,9 +230,9 @@ public class LightLog {
         simpleI(TAG, stringBuilder.toString());
     }
 
-   /**
-    * 显示Json数据
-    * */
+    /**
+     * 显示Json数据
+     */
     private static void ShowJson(String arg, StringBuilder stringBuilder) throws JSONException {
         String formatString = formatJson(arg);
         stringBuilder.append(HORIZONTAL_LINE);
@@ -233,7 +241,10 @@ public class LightLog {
         stringBuilder.append(formatString);
 
     }
-    /**格式化Json数据*/
+
+    /**
+     * 格式化Json数据
+     */
     private static String formatJson(String arg) throws JSONException {
         if (arg.startsWith("{")) {
             return new JSONObject(arg).toString(1).replaceAll("\\n", "\n" + HORIZONTAL_LINE + "          " + HORIZONTAL_LINE);

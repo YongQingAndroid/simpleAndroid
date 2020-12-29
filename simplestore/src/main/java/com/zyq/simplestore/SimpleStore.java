@@ -1,7 +1,6 @@
 package com.zyq.simplestore;
 
 import com.alibaba.fastjson.JSON;
-import com.zyq.simplestore.core.DbManager;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.simplestore.core.TableCatch;
 import com.zyq.simplestore.core.ThreadPool;
@@ -12,7 +11,6 @@ import com.zyq.simplestore.log.LightLog;
 import java.util.List;
 
 public class SimpleStore {
-    static DbManager dbManager;
 
     /**
      * 储存
@@ -34,12 +32,6 @@ public class SimpleStore {
         //涉及底层待实现
     }
 
-    public static DbManager getDbManager() {
-        if (dbManager == null) {
-            dbManager = new DbManager();
-        }
-        return dbManager;
-    }
 
     /**
      * 删除数据

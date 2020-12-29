@@ -13,34 +13,46 @@ import java.util.List;
  * @param <T>
  */
 public class WorkHandler<T> {
-    WorkThread workThread;
+    WorkThread workThread = null;
     T obj;
 
     List<ExecuteEvent> executeEvents = new ArrayList<>();
     ResultCallBack<T> resultCallBack;
 
-    WorkHandler(MapExecute mapExecute) {
-        this.executeEvents.add(new ExecuteEvent(workThread, mapExecute));
+//    WorkHandler(MapExecute mapExecute) {
+//        this.executeEvents.clear();
+//        this.executeEvents.add(new ExecuteEvent(null, mapExecute));
+//    }
+
+    WorkHandler(T obj) {
+        this.obj = obj;
+        this.executeEvents.clear();
     }
 
-    WorkHandler(WorkThread workThread, List<ExecuteEvent> executeEvents) {
+    public static <M> WorkHandler<M> from(M obj) {
+        return new WorkHandler(obj);
+    }
+
+    WorkHandler(WorkThread workThread, T obj, List<ExecuteEvent> executeEvents) {
         this.workThread = workThread;
+        this.obj = obj;
         this.executeEvents.addAll(executeEvents);
     }
 
     public WorkHandler<T> executeOn(WorkThread workThread) {
-        this.workThread = workThread;
         setCurrentWorkThread(workThread);
+        this.workThread = workThread;
         return this;
     }
 
     public <R> WorkHandler<R> map(MapExecute<R, T> mapExecute) {
         executeEvents.add(new ExecuteEvent(workThread, mapExecute));
-        return new WorkHandler(workThread, executeEvents);
+        return new WorkHandler(workThread, obj, executeEvents);
     }
 
+
     protected WorkThread setCurrentWorkThread(WorkThread workThread) {
-        if (workThread == null) {
+        if (this.workThread == null) {
             for (ExecuteEvent event : executeEvents) {
                 if (event.workThread == null) {
                     event.workThread = workThread;
@@ -64,24 +76,25 @@ public class WorkHandler<T> {
         return workThread;
     }
 
-    public void getResult(ResultCallBack<T> resultCallBack) {
+    public void setResult(ResultCallBack<T> resultCallBack) {
         this.resultCallBack = resultCallBack;
-        try {
-            if (executeEvents.size() == 0) {
-                getCurrentWorkThread().work(() -> {
-                    resultCallBack.onSuccess(obj);
-                });
-                return;
-            }
-            ExecuteEvent event = executeEvents.get(0);
-            executeEvents.remove(0);
-            getCurrentWorkThread(event).work(() -> {
-                this.obj = (T) event.execute.execute(obj);
-                getResult(this.resultCallBack);
+        if (executeEvents.size() == 0) {
+            getCurrentWorkThread().work(() -> {
+                resultCallBack.onSuccess(obj);
             });
-        } catch (Exception e) {
-            resultCallBack.onError(e);
+            return;
         }
+        ExecuteEvent event = executeEvents.get(0);
+        executeEvents.remove(0);
+        getCurrentWorkThread(event).work(() -> {
+            try {
+                this.obj = (T) event.execute.execute(obj);
+                setResult(this.resultCallBack);
+            } catch (Exception e) {
+                resultCallBack.onError(e);
+            }
+
+        });
 
     }
 
@@ -132,10 +145,6 @@ public class WorkHandler<T> {
 
     public interface MapExecute<R, T> {
         R execute(T t);
-    }
-
-    public interface HandlerCallBack {
-        Object call();
     }
 
     public interface ResultCallBack<T> {

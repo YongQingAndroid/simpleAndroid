@@ -11,6 +11,7 @@ import com.zyq.simplestore.imp.DbToMany;
 import com.zyq.simplestore.imp.DbPrimaryKey;
 import com.zyq.simplestore.imp.DbTableName;
 import com.zyq.simplestore.imp.DbToOne;
+import com.zyq.simplestore.log.LightLog;
 
 import java.util.List;
 
@@ -28,17 +29,16 @@ public class Main {
 
         });
 
-        SimpleStore.getDbManager()
-                .query(TestBean.class)
-                .executeOn(WorkHandler.schedulerWorkThread())
-                .map(obj -> 123456)
-                .map(obj -> obj + "string")
-                .executeOn(WorkHandler.schedulerMainThread())
-                .map(obj -> Double.parseDouble("0.001"))
-                .getResult(new WorkHandler.ResultCallBack<Double>() {
-                    @Override
-                    public void onSuccess(Double obj) {
 
+        WorkHandler.from(DbOrmHelper.getInstent())
+                .executeOn(WorkHandler.schedulerWorkThread())
+                .map(dbOrmHelper -> dbOrmHelper.query(TestBean.class))
+                .executeOn(WorkHandler.schedulerMainThread())
+                .map(list -> list.get(0).name)
+                .setResult(new WorkHandler.ResultCallBack<String>() {
+                    @Override
+                    public void onSuccess(String obj) {
+                        LightLog.i("我从数据库获得了" + obj);
                     }
 
                     @Override
@@ -47,6 +47,22 @@ public class Main {
                     }
                 });
 
+        TestBean testBean1 = new TestBean();
+        WorkHandler.from(testBean1)
+                .executeOn(WorkHandler.schedulerWorkThread())
+                .map(bean -> "name=" + bean.name)
+                .executeOn(WorkHandler.schedulerMainThread())
+                .setResult(new WorkHandler.ResultCallBack<String>() {
+                    @Override
+                    public void onSuccess(String obj) {
+
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+
+                    }
+                });
 
         //数据库操作**********************************************
         //
