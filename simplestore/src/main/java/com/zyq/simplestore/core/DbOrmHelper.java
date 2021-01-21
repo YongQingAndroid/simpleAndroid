@@ -2,6 +2,7 @@ package com.zyq.simplestore.core;
 
 import android.app.Application;
 
+import android.app.DownloadManager;
 import android.database.Cursor;
 
 import android.database.sqlite.SQLiteStatement;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,7 @@ public class DbOrmHelper {
     private static DbOrmHelper self;
     private static Application context;
     private DbWorker dbWorker;
+    private Map<OrmTableBean, QueryBean> queryBeanMap = new HashMap();
 
     public DbOrmHelper() {
         dbWorker = new DbWorker(null, getContext());
@@ -115,6 +118,7 @@ public class DbOrmHelper {
      * @param whereBulider 查找条件
      */
     public <M> List<M> query(Class<M> mClass, String tableName, WhereBulider whereBulider) {
+        queryBeanMap.clear();
         OrmTableBean ormTableBean = DbPraseClazz.getInstent().getTableMsg(mClass);
         dbWorker.openOnlyReadDataBase();
         verification_tab(ormTableBean);
@@ -125,16 +129,23 @@ public class DbOrmHelper {
         String sql = "";
         Field[] fields = ormTableBean.getFields();
         boolean isList = ormTableBean.isList();
+        if (queryBeanMap.containsKey(ormTableBean)) {
+            QueryBean queryBean = queryBeanMap.get(ormTableBean);
+            sql = queryBean.sql;
+            whereBulider = queryBean.whereBulider;
+        }
         if (whereBulider == null) {
             SqlBuilder sqlBuilder = SqlBuilder.newInstance().setTableMsg(ormTableBean);
             sql = sqlBuilder.getSqlString();
             whereBulider = sqlBuilder.getWhereBulider(owerObj);
             sql += whereBulider.toString();
+            queryBeanMap.put(ormTableBean, new QueryBean(whereBulider, sql));
+            LightLog.i(sql);
         }
         List list = new ArrayList();
         Object result = null;
         int size = fields.length;
-        LightLog.i(sql);
+
         Cursor cursor = dbWorker.getSqLiteDatabase().rawQuery(sql, whereBulider.getvalue());
         try {
             while (cursor.moveToNext()) {
@@ -173,6 +184,16 @@ public class DbOrmHelper {
             dbWorker.getSqLiteDatabase().close();
         }
         return result;
+    }
+
+    public static class QueryBean {
+        WhereBulider whereBulider;
+        String sql;
+
+        QueryBean(WhereBulider whereBulider, String sql) {
+            this.whereBulider = whereBulider;
+            this.sql = sql;
+        }
     }
 
     /**

@@ -100,7 +100,7 @@ public class DbPraseClazz {
         if (tables.containsKey(clazz)) {
             return tables.get(clazz);
         }
-        LightLog.i("getTableMsg from Class search");
+//        LightLog.i("getTableMsg from Class search");
         List<Field> table_field = new ArrayList<>();
         Field[] fields = clazz.getDeclaredFields();
         Field primaryField = null;

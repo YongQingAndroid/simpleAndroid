@@ -1,10 +1,11 @@
-package com.zyq.simplestore.core;
+package com.zyq.handler;
 
 
 import android.os.Handler;
 import android.os.Looper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -13,24 +14,32 @@ import java.util.List;
  * @param <T>
  */
 public class WorkHandler<T> {
-    WorkThread workThread = null;
-    T obj;
+    protected WorkThread workThread = null;
+    protected T obj;
 
-    List<ExecuteEvent> executeEvents = new ArrayList<>();
-    ResultCallBack<T> resultCallBack;
+    protected List<ExecuteEvent> executeEvents = new ArrayList<>();
+    protected ResultCallBack<T> resultCallBack;
 
-//    WorkHandler(MapExecute mapExecute) {
-//        this.executeEvents.clear();
-//        this.executeEvents.add(new ExecuteEvent(null, mapExecute));
-//    }
 
     WorkHandler(T obj) {
         this.obj = obj;
         this.executeEvents.clear();
     }
 
+    public static <M> ArrayWorkHandler<M> fromArray(List<M> obj) {
+        return new ArrayWorkHandler(obj);
+    }
+
+    public static <K, V> MapWorkHandler<K, V> fromHashMap(HashMap<K, V> obj) {
+        return new MapWorkHandler(obj);
+    }
+
     public static <M> WorkHandler<M> from(M obj) {
         return new WorkHandler(obj);
+    }
+
+    public static WorkHandler from() {
+        return new WorkHandler(null);
     }
 
     WorkHandler(WorkThread workThread, T obj, List<ExecuteEvent> executeEvents) {
@@ -48,6 +57,15 @@ public class WorkHandler<T> {
     public <R> WorkHandler<R> map(MapExecute<R, T> mapExecute) {
         executeEvents.add(new ExecuteEvent(workThread, mapExecute));
         return new WorkHandler(workThread, obj, executeEvents);
+    }
+
+    /**
+     * 待实现
+     *
+     * @return
+     */
+    public static WorkHandler zip() {
+        return null;
     }
 
 
@@ -78,9 +96,15 @@ public class WorkHandler<T> {
 
     public void setResult(ResultCallBack<T> resultCallBack) {
         this.resultCallBack = resultCallBack;
+        execute();
+
+    }
+
+    public void execute() {
         if (executeEvents.size() == 0) {
             getCurrentWorkThread().work(() -> {
-                resultCallBack.onSuccess(obj);
+                if (this.resultCallBack != null)
+                    this.resultCallBack.onSuccess(obj);
             });
             return;
         }
@@ -88,14 +112,21 @@ public class WorkHandler<T> {
         executeEvents.remove(0);
         getCurrentWorkThread(event).work(() -> {
             try {
-                this.obj = (T) event.execute.execute(obj);
+                this.obj = (T) executeEvent(event);
                 setResult(this.resultCallBack);
             } catch (Exception e) {
-                resultCallBack.onError(e);
+                if (this.resultCallBack != null)
+                    this.resultCallBack.onError(e);
             }
 
         });
+    }
 
+    protected Object executeEvent(ExecuteEvent event) {
+        if (event.execute instanceof MapExecute) {
+            return ((MapExecute) event.execute).execute(obj);
+        }
+        return obj;
     }
 
     interface WorkThread {
@@ -115,7 +146,7 @@ public class WorkHandler<T> {
     }
 
 
-    public static WorkThread schedulerMainThread() {
+    public static WorkThread schedulerAndroidMainThread() {
         return new MainThread();
     }
 
@@ -143,8 +174,11 @@ public class WorkHandler<T> {
         }
     }
 
-    public interface MapExecute<R, T> {
+    public interface MapExecute<R, T> extends Execute {
         R execute(T t);
+    }
+
+    public interface Execute {
     }
 
     public interface ResultCallBack<T> {
@@ -155,9 +189,9 @@ public class WorkHandler<T> {
 
     public static class ExecuteEvent {
         WorkThread workThread;
-        MapExecute execute;
+        Execute execute;
 
-        ExecuteEvent(WorkThread workThread, MapExecute execute) {
+        ExecuteEvent(WorkThread workThread, Execute execute) {
             this.workThread = workThread;
             this.execute = execute;
         }

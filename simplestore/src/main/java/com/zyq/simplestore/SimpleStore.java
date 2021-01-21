@@ -3,7 +3,7 @@ package com.zyq.simplestore;
 import com.alibaba.fastjson.JSON;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.simplestore.core.TableCatch;
-import com.zyq.simplestore.core.ThreadPool;
+import com.zyq.handler.ThreadPool;
 import com.zyq.simplestore.core.WhereBulider;
 import com.zyq.simplestore.imp.DbPrimaryKey;
 import com.zyq.simplestore.log.LightLog;

@@ -1,10 +1,11 @@
 package com.zyq.simplestore.test;
 
+import com.zyq.handler.ArrayWorkHandler;
 import com.zyq.simplestore.SimpleStore;
 import com.zyq.simplestore.core.CustomerDbHelper;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.simplestore.core.WhereBulider;
-import com.zyq.simplestore.core.WorkHandler;
+import com.zyq.handler.WorkHandler;
 import com.zyq.simplestore.imp.DbColumn;
 import com.zyq.simplestore.imp.DbIgnore;
 import com.zyq.simplestore.imp.DbToMany;
@@ -13,6 +14,7 @@ import com.zyq.simplestore.imp.DbTableName;
 import com.zyq.simplestore.imp.DbToOne;
 import com.zyq.simplestore.log.LightLog;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
@@ -33,7 +35,7 @@ public class Main {
         WorkHandler.from(DbOrmHelper.getInstent())
                 .executeOn(WorkHandler.schedulerWorkThread())
                 .map(dbOrmHelper -> dbOrmHelper.query(TestBean.class))
-                .executeOn(WorkHandler.schedulerMainThread())
+                .executeOn(WorkHandler.schedulerAndroidMainThread())
                 .map(list -> list.get(0).name)
                 .setResult(new WorkHandler.ResultCallBack<String>() {
                     @Override
@@ -51,7 +53,7 @@ public class Main {
         WorkHandler.from(testBean1)
                 .executeOn(WorkHandler.schedulerWorkThread())
                 .map(bean -> "name=" + bean.name)
-                .executeOn(WorkHandler.schedulerMainThread())
+                .executeOn(WorkHandler.schedulerAndroidMainThread())
                 .setResult(new WorkHandler.ResultCallBack<String>() {
                     @Override
                     public void onSuccess(String obj) {

@@ -4,20 +4,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
 
 import com.jfz.wealth.R;
-import com.zyq.simplestore.SimpleStore;
 import com.zyq.simplestore.core.DbOrmHelper;
-import com.zyq.simplestore.core.WorkHandler;
+import com.zyq.handler.WorkHandler;
 import com.zyq.simplestore.imp.DbTableName;;
-import com.zyq.simplestore.imp.DbToMany;
 import com.zyq.simplestore.imp.DbToOne;
 import com.zyq.simplestore.log.LightLog;
-import com.zyq.simplestore.test.Main;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -47,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
                     LightLog.i("从数据库查询回调中切片取出" + obj.get(0).test.name);
                     return "搜索到了" + obj.size() + "个数据";
                 })
-                .executeOn(WorkHandler.schedulerMainThread())
+                .executeOn(WorkHandler.schedulerAndroidMainThread())
                 .setResult(new WorkHandler.ResultCallBack<String>() {
                     @Override
                     public void onSuccess(String obj) {
@@ -59,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
                         LightLog.i("错误信息：" + e.getMessage());
                     }
                 });
-
+//        LightLog.i(JSON.toJSONString(testOrm));
     }
 
 
@@ -87,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
             this.name = name;
         }
 
-        @DbToMany
+        @DbToOne
         TestOrm1 test;
 
     }

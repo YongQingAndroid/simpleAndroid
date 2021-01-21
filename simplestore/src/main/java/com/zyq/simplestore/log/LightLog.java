@@ -69,7 +69,6 @@ public class LightLog {
             arg = "NULL";
         }
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("---\b");
         ShowTopLine(stringBuilder);
         showThreadMsg(stringBuilder);
         ShowCenterLine(stringBuilder);
@@ -86,7 +85,7 @@ public class LightLog {
     }
 
     private static void ShowTopLine(StringBuilder stringBuilder) {
-        stringBuilder.append("\n");
+        stringBuilder.append("----\n");
         stringBuilder.append(TOP_BORDER);
         stringBuilder.append("\n");
     }
