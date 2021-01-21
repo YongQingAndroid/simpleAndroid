@@ -20,6 +20,10 @@ public class MapWorkHandler<K, V> extends WorkHandler<Map<K, V>> {
         return this;
     }
 
+    public <M, N> MapWorkHandler<M, N> praseType(Class<M> key, Class<N> value) {
+        return (MapWorkHandler<M, N>) this;
+    }
+
     public MapWorkHandler<K, V> filter(MapFilterExecuteEvent<K, V> mExecute) {
         executeEvents.add(new ExecuteEvent(workThread, mExecute));
         return this;

@@ -30,6 +30,35 @@ public class WorkHandler<T> {
         return new ArrayWorkHandler(obj);
     }
 
+    /**
+     * 只有当前数据为list时才可以调用
+     *
+     * @param <M>
+     * @return
+     */
+    public <M> ArrayWorkHandler<M> toArrayHandler() {
+        return (ArrayWorkHandler<M>) fromArray((List) obj);
+    }
+
+    public <M> ArrayWorkHandler<M> toArrayHandler(Class<M> tClass) {
+        return (ArrayWorkHandler<M>) fromArray((List) obj);
+    }
+
+    /**
+     * 只有当前数据为map时才可以调用
+     *
+     * @param <K>
+     * @param <V>
+     * @return
+     */
+    public <K, V> MapWorkHandler<K, V> toMapHandler() {
+        return (MapWorkHandler<K, V>) fromHashMap((HashMap) obj);
+    }
+
+    public <K, V> MapWorkHandler<K, V> toMapHandler(Class<K> key, Class<V> value) {
+        return (MapWorkHandler<K, V>) fromHashMap((HashMap) obj);
+    }
+
     public static <K, V> MapWorkHandler<K, V> fromHashMap(HashMap<K, V> obj) {
         return new MapWorkHandler(obj);
     }

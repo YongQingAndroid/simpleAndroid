@@ -23,6 +23,9 @@ public class ArrayWorkHandler<T> extends WorkHandler<List<T>> {
         return this;
     }
 
+    public <M> ArrayWorkHandler<M> praseType(Class<M> mClass) {
+        return (ArrayWorkHandler<M>) this;
+    }
 
     @Override
     public ArrayWorkHandler<T> executeOn(WorkThread workThread) {

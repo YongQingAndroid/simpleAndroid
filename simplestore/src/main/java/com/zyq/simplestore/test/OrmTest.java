@@ -52,6 +52,21 @@ public class OrmTest {
                     }
                 });
 
+        WorkHandler.from("")
+                .executeOn(WorkHandler.schedulerWorkThread())
+                .map(value -> new ArrayList<Double>())
+                .toArrayHandler()
+                .praseType(Double.class)
+                .forEach((aDouble, index) -> {
+                })
+                .map(value -> new HashMap<String, TableBean>())
+                .toMapHandler()
+                .praseType(String.class, TableBean.class)
+                .map(value->"66666666")
+                .map(value->new ArrayList<TableBean>())
+                .toArrayHandler(TableBean.class)
+                .execute();
+
 
     }
 
