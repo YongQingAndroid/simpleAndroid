@@ -1,8 +1,12 @@
 package com.zyq.simplestore.test;
 
+import android.content.Context;
+
+import com.zyq.SuperCompression.SuperCompression;
 import com.zyq.handler.WorkHandler;
 import com.zyq.simplestore.imp.DbPrimaryKey;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,11 +66,63 @@ public class OrmTest {
                 .map(value -> new HashMap<String, TableBean>())
                 .toMapHandler()
                 .praseType(String.class, TableBean.class)
-                .map(value->"66666666")
-                .map(value->new ArrayList<TableBean>())
+                .map(value -> "66666666")
+                .map(value -> new ArrayList<TableBean>())
                 .toArrayHandler(TableBean.class)
                 .execute();
 
+
+        /**
+         * 同步压缩
+         */
+        SuperCompression.newInstance()
+                .getCompressionBuilder(null)
+                .from("")
+                .setMaxSize(100)
+                .get();
+        /**
+         * 异步压缩 （自动切换到子线程成功后回调到主线程）
+         */
+        SuperCompression.newInstance()
+                .getCompressionBuilder(null)
+                .from("")
+                .setMaxSize(100)
+                .get(new SuperCompression.CompressionCallback() {
+                    @Override
+                    public void onStart(Context context) {
+
+                    }
+
+                    @Override
+                    public void onSuccess(List<File> files) {
+
+                    }
+
+                    @Override
+                    public void onErr(Exception e) {
+
+                    }
+                });
+        /***
+         *配合线程调度工具使用
+         */
+        WorkHandler.from(SuperCompression.newInstance())
+                .executeOn(WorkHandler.schedulerWorkThread())
+                .map(arg -> arg.getCompressionBuilder(null))
+                .map(arg -> arg.setWidth(100).setMaxSize(100).setHeight(100))
+                .map(arg -> arg.from("path").get())
+                .executeOn(WorkHandler.schedulerAndroidMainThread())
+                .setResult(new WorkHandler.ResultCallBack<List<File>>() {
+                    @Override
+                    public void onSuccess(List<File> obj) {
+
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+
+                    }
+                });
 
     }
 

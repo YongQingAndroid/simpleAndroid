@@ -6,11 +6,15 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.jfz.wealth.R;
+import com.zyq.SuperCompression.SuperCompression;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.handler.WorkHandler;
 import com.zyq.simplestore.imp.DbTableName;;
 import com.zyq.simplestore.imp.DbToOne;
 import com.zyq.simplestore.log.LightLog;
+
+import java.io.File;
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -50,6 +54,23 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onError(Exception e) {
                         LightLog.i("错误信息：" + e.getMessage());
+                    }
+                });
+        SuperCompression.newInstance()
+                .getCompressionBuilder(null)
+                .from("")
+                .setHeight(100)
+                .setWidth(100)
+                .setMaxSize(100)
+                .get(new SuperCompression.CompressionCallback() {
+                    @Override
+                    public void onSuccess(List<File> files) {
+
+                    }
+
+                    @Override
+                    public void onErr(Exception e) {
+
                     }
                 });
 //        LightLog.i(JSON.toJSONString(testOrm));
