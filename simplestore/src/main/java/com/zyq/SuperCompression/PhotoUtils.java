@@ -9,36 +9,26 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.FileUtils;
-import android.provider.DocumentsContract;
+
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.TextUtils;
 
-import androidx.annotation.RequiresApi;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.RuntimeException;
-import java.util.Random;
-
 import static com.zyq.SuperCompression.FileUtils.UriToFile;
 
 
-class PhotoUtils {
-
-
+public class PhotoUtils {
 
     static String authorities = "";
 
-    interface Callback {
+   public interface Callback {
         void let(Uri uri, boolean result, String arg);
     }
 
@@ -220,7 +210,7 @@ class PhotoUtils {
      * 打开相册
      */
 
-    static void select(FragmentManager manager, Callback photoCallBack) {
+   public static void select(FragmentManager manager, Callback photoCallBack) {
         getPhotoFragment(manager).select(photoCallBack);
     }
 
@@ -229,7 +219,7 @@ class PhotoUtils {
      * 打开相册
      */
 
-    static void select(FragmentActivity activity, Callback photoCallBack) {
+    public static void select(FragmentActivity activity, Callback photoCallBack) {
 
         getPhotoFragment(activity.getSupportFragmentManager()).select(photoCallBack);
     }
@@ -238,7 +228,7 @@ class PhotoUtils {
      * 打开相册
      */
 
-    static void select(Fragment fragment, Callback photoCallBack) {
+    public static void select(Fragment fragment, Callback photoCallBack) {
         getPhotoFragment(fragment.getChildFragmentManager()).select(photoCallBack);
     }
 
@@ -253,7 +243,7 @@ class PhotoUtils {
      * 调用相机拍照
      */
 
-    static void camera(FragmentActivity activity, Callback photoCallBack) {
+    public static void camera(FragmentActivity activity, Callback photoCallBack) {
         getPhotoFragment(activity.getSupportFragmentManager()).
                 camera(photoCallBack);
     }
@@ -261,7 +251,7 @@ class PhotoUtils {
     /**
      * 调用相机拍照
      */
-    static void camera(Fragment fragment, Callback photoCallBack) {
+    public static void camera(Fragment fragment, Callback photoCallBack) {
         getPhotoFragment(fragment.getChildFragmentManager()).
                 camera(photoCallBack);
     }
@@ -274,19 +264,19 @@ class PhotoUtils {
     /**
      * 调用裁剪功能
      */
-    static Crop crop(FragmentManager manager) {
+    public  static Crop crop(FragmentManager manager) {
         return new Crop(manager);
     }
 
     /**
      * 调用裁剪功能
      */
-    static Crop crop(FragmentActivity activity) {
+    public  static Crop crop(FragmentActivity activity) {
         return crop(activity.getSupportFragmentManager());
     }
 
 
-    static class Crop {
+    public static class Crop {
         FragmentManager manager;
 
         Crop(FragmentManager manager) {

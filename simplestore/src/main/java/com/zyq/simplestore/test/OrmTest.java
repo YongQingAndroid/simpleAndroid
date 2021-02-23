@@ -1,7 +1,9 @@
 package com.zyq.simplestore.test;
 
 import android.content.Context;
+import android.net.Uri;
 
+import com.zyq.SuperCompression.PhotoUtils;
 import com.zyq.SuperCompression.SuperCompression;
 import com.zyq.handler.WorkHandler;
 import com.zyq.simplestore.imp.DbPrimaryKey;
@@ -11,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import androidx.fragment.app.Fragment;
 
 public class OrmTest {
     public static void main(String[] args) {
@@ -123,6 +127,17 @@ public class OrmTest {
 
                     }
                 });
+
+        //调用相册
+        PhotoUtils.select((Fragment) null, (uri, result, arg) -> {
+            if (result) {
+                SuperCompression.newInstance()
+                        .getCompressionBuilder(null)
+                        .from(uri)
+                        .setMaxSize(100)
+                        .get();
+            }
+        });
 
     }
 
