@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
+import com.google.gson.Gson;
 import com.jfz.wealth.R;
 
 public class Main2Activity extends BaseActivity {
@@ -13,6 +14,7 @@ public class Main2Activity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
+        Gson.setStrictMode(false);
     }
 
     public void goLogin(View view) {

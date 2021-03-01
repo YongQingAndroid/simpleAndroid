@@ -23,6 +23,9 @@ public class ArrayWorkHandler<T> extends WorkHandler<List<T>> {
         return this;
     }
 
+
+
+
     public <M> ArrayWorkHandler<M> praseType(Class<M> mClass) {
         return (ArrayWorkHandler<M>) this;
     }
@@ -68,4 +71,6 @@ public class ArrayWorkHandler<T> extends WorkHandler<List<T>> {
     public interface ArrayFilterExecuteEvent<T> extends Execute {
         boolean execute(T t, int index);
     }
+
+
 }

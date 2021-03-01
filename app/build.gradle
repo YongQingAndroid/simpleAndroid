@@ -48,4 +48,6 @@ dependencies {
 
     implementation files('libs/quick_login_android_5.7.4.jar')
     compile project(path: ':simplestore')
+    implementation 'com.zackratos.ultimatebarx:ultimatebarx:0.3.3'
+    implementation files('libs\\QGson.jar')
 }

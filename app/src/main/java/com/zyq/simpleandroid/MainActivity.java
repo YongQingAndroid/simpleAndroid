@@ -2,9 +2,12 @@ package com.zyq.simpleandroid;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 
+import com.google.gson.Gson;
+import com.jfz.wealth.BuildConfig;
 import com.jfz.wealth.R;
 import com.zyq.SuperCompression.SuperCompression;
 import com.zyq.simplestore.core.DbOrmHelper;
@@ -28,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     public void mClick(View view) {
 //        SimpleStore.store("name", "5656565656");
 //        SimpleStore.openMmap();
+
 //        LightLog.I(SimpleStore.praseKey("name").get(String.class));
         TestOrm testOrm = new TestOrm("1", "lisa");
         TestOrm1 testOrm1 = new TestOrm1("1", "tom6668886");
@@ -63,6 +67,11 @@ public class MainActivity extends AppCompatActivity {
                 .setWidth(100)
                 .setMaxSize(100)
                 .get(new SuperCompression.CompressionCallback() {
+                    @Override
+                    public void onStart(Context context) {
+
+                    }
+
                     @Override
                     public void onSuccess(List<File> files) {
 
