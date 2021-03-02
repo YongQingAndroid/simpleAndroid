@@ -21,7 +21,7 @@ import java.util.List;
 @SuppressLint("ValidFragment")
 @TargetApi(Build.VERSION_CODES.M)
 public final class PermissionFragment extends Fragment {
-
+     public static final String TAG="tag_permissionfragment";
     /** 请求的权限 */
     private static final String PERMISSION_GROUP = "permission_group";
 
@@ -36,6 +36,7 @@ public final class PermissionFragment extends Fragment {
      */
     public static void beginRequest(Activity activity, ArrayList<String> permissions, OnPermission callback) {
         PermissionFragment fragment = new PermissionFragment(callback);
+//        activity.getFragmentManager().findFragmentByTag(TAG);
         Bundle bundle = new Bundle();
         int requestCode;
         // 请求码随机生成，避免随机产生之前的请求码，必须进行循环判断
