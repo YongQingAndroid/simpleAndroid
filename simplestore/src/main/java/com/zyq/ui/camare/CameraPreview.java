@@ -87,10 +87,12 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             Size previewSize = chooseOptimalSize(mPreviewSizes.sizes(mAspectRatio));
             Size pictureSize = mPictureSizes.sizes(mAspectRatio).last();
             //设置相机参数
+
             parameters.setPreviewSize(Math.max(previewSize.getWidth(), previewSize.getHeight()), Math.min(previewSize.getWidth(), previewSize.getHeight()));
             parameters.setPictureSize(Math.max(pictureSize.getWidth(), pictureSize.getHeight()), Math.min(pictureSize.getWidth(), pictureSize.getHeight()));
             parameters.setPictureFormat(ImageFormat.JPEG);
             parameters.setRotation(getDisplayOrientation());
+            parameters.setZoom(0);
             mCamera.setParameters(parameters);
             //把这个预览效果展示在SurfaceView上面
             mCamera.setPreviewDisplay(holder);

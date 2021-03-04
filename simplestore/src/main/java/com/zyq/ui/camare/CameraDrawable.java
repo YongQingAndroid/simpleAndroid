@@ -16,7 +16,7 @@ public class CameraDrawable extends Drawable {
     int bgColor = android.graphics.Color.BLACK;
     RectF rectF;
     Context context;
-    int space = 15, Alpha = 150;
+    int space = 15, Alpha = 200;
 
     CameraDrawable(Context context) {
         this.context = context;
@@ -53,13 +53,19 @@ public class CameraDrawable extends Drawable {
         int canvasWidth = canvas.getWidth();
         int canvasHeight = canvas.getHeight();
         setRectf(canvasWidth, canvasHeight);
+        Paint paint1 = new Paint();
+        paint1.setColor(Color.WHITE);
+        paint1.setAntiAlias(true);
+        paint1.setTextSize(sp2px(15));
+
         Paint paint = new Paint();
+        paint.setAntiAlias(true);
         paint.setColor(bgColor);
-        paint.setTextSize(sp2px(15));
-        paint.setAlpha(150);
+
+        paint.setAlpha(Alpha);
         String msg = "请把证件放入框内";
-        float ww = paint.measureText(msg);
-        canvas.drawText(msg, (canvasWidth - ww) / 2, canvasHeight / 2, paint);
+        float ww = paint1.measureText(msg);
+        canvas.drawText(msg, (canvasWidth - ww) / 2, canvasHeight / 2, paint1);
 
         int layerId = canvas.saveLayer(0, 0, canvasWidth, canvasHeight, null, Canvas.ALL_SAVE_FLAG);
 
@@ -70,8 +76,7 @@ public class CameraDrawable extends Drawable {
         paint.setXfermode(null);
         canvas.restoreToCount(layerId);
 
-        Paint paint1 = new Paint();
-        paint1.setColor(Color.RED);
+
         paint1.setStyle(Paint.Style.STROKE);
         paint1.setStrokeWidth(5);
         canvas.drawRoundRect(rectF, radio, radio, paint1);

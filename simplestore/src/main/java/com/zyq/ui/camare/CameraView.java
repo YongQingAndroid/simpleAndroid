@@ -113,6 +113,7 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
     public void startCamera() {
         if (mCamera == null) {
             mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+
         }
         if (cameraPreview == null) {
             cameraDrawable = new CameraDrawable(getContext());
@@ -204,6 +205,7 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
                     retBitmap = BitmapUtils.setTakePicktrueOrientation(Camera.CameraInfo.CAMERA_FACING_BACK, retBitmap);
 
                     BitmapUtils.saveBitmap(BitmapUtils.cropCardBitmap(retBitmap), imagePath);
+
                     if (cameraCall != null)
                         cameraCall.call(true, imagePath);
                     LightLog.i(imagePath);
