@@ -47,7 +47,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
 
     implementation files('libs/quick_login_android_5.7.4.jar')
-    compile project(path: ':simplestore')
+    api project(path: ':simplestore')
     implementation 'com.zackratos.ultimatebarx:ultimatebarx:0.3.3'
-    implementation files('libs\\QGson.jar')
 }

@@ -26,7 +26,7 @@ public class ArrayWorkHandler<T> extends WorkHandler<List<T>> {
 
 
 
-    public <M> ArrayWorkHandler<M> praseType(Class<M> mClass) {
+    public <M> ArrayWorkHandler<M> ParsingType(Class<M> mClass) {
         return (ArrayWorkHandler<M>) this;
     }
 

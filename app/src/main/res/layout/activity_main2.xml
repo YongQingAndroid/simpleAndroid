@@ -1,20 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
-    <Button
+    <com.zyq.ui.camare.CameraView
+        android:id="@+id/camera"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="getToken"
-        android:text="loginAuth" />
-
-    <Button
+        android:layout_height="match_parent"
+        />
+    <LinearLayout
+        android:id="@+id/group"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="goLogin"
-        android:text="getPhoneInfo" />
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="getToken"
+            android:text="loginAuth"
+            android:visibility="gone" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="goLogin"
+
+            android:text="getPhoneInfo" />
+
+        <ImageView
+            android:id="@+id/img1"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@color/colorPrimary" />
+
+
+    </LinearLayout>
+
+</FrameLayout>

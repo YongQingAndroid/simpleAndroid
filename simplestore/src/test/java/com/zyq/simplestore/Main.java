@@ -1,6 +1,8 @@
 package com.zyq.simplestore;
 
 import com.zyq.handler.ArrayWorkHandler;
+import com.zyq.handler.ProgressHandler;
+import com.zyq.handler.SimpleThreadHandler;
 import com.zyq.simplestore.SimpleStore;
 import com.zyq.simplestore.core.CustomerDbHelper;
 import com.zyq.simplestore.core.DbOrmHelper;
@@ -89,6 +91,45 @@ public class Main {
         //*******兼容旧数据库
         CustomerDbHelper customerDbHelper = new CustomerDbHelper(null, null);
         customerDbHelper.save(null, "tableTable");
+
+
+        WorkHandler.from(DbOrmHelper.getInstent())
+                .executeOn(WorkHandler.schedulerWorkThread())
+                .map(dbOrmHelper -> dbOrmHelper.query(TestBean.class))
+                .toProgress()
+                .handleProgress(new ProgressHandler.ProgressExecuter<List<TestBean>>() {
+                    @Override
+                    public void doInBackground(List<TestBean> testBeans) {
+                        postProgress(null, 0);
+                    }
+
+                    @Override
+                    public void progress(List<TestBean> testBeans, int progress) {
+
+                    }
+                })
+                .executeOn(WorkHandler.schedulerAndroidMainThread())
+                .map(list -> list.get(0).name)
+                .setResult(new WorkHandler.ResultCallBack<String>() {
+                    @Override
+                    public void onSuccess(String obj) {
+                        LightLog.i("我从数据库获得了" + obj);
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+
+                    }
+                });
+
+        SimpleThreadHandler.getInstance().execute(new SimpleThreadHandler.SimpleHandlerCall<String>() {
+
+            @Override
+            public String doInBackground() {
+                return null;
+            }
+
+        });
     }
 
     class TestBean {

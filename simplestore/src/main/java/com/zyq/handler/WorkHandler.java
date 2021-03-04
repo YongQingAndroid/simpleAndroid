@@ -45,6 +45,15 @@ public class WorkHandler<T> {
     }
 
     /**
+     * 循环发射
+     * 常用于进度条更新
+     * @return
+     */
+    public ProgressHandler<T> toProgress() {
+        return new ProgressHandler<>(obj);
+    }
+
+    /**
      * 只有当前数据为map时才可以调用
      *
      * @param <K>
@@ -87,6 +96,7 @@ public class WorkHandler<T> {
         executeEvents.add(new ExecuteEvent(workThread, mapExecute));
         return new WorkHandler(workThread, obj, executeEvents);
     }
+
 
     /**
      * 待实现

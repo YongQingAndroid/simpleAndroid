@@ -1,10 +1,9 @@
 package com.zyq.simplestore;
 
 import android.content.Context;
-import android.net.Uri;
 
-import com.zyq.SuperCompression.PhotoUtils;
-import com.zyq.SuperCompression.SuperCompression;
+import com.zyq.SuperCompression.QPhotoUtils;
+import com.zyq.SuperCompression.QCompression;
 import com.zyq.handler.WorkHandler;
 import com.zyq.simplestore.imp.DbPrimaryKey;
 
@@ -64,12 +63,12 @@ public class OrmTest {
                 .executeOn(WorkHandler.schedulerWorkThread())
                 .map(value -> new ArrayList<Double>())
                 .toArrayHandler()
-                .praseType(Double.class)
+                .ParsingType(Double.class)
                 .forEach((aDouble, index) -> {
                 })
                 .map(value -> new HashMap<String, TableBean>())
                 .toMapHandler()
-                .praseType(String.class, TableBean.class)
+                .ParsingType(String.class, TableBean.class)
                 .map(value -> "66666666")
                 .map(value -> new ArrayList<TableBean>())
                 .toArrayHandler(TableBean.class)
@@ -79,7 +78,7 @@ public class OrmTest {
         /**
          * 同步压缩
          */
-        SuperCompression.newInstance()
+        QCompression.newInstance()
                 .getCompressionBuilder(null)
                 .from("")
                 .setMaxSize(100)
@@ -87,11 +86,11 @@ public class OrmTest {
         /**
          * 异步压缩 （自动切换到子线程成功后回调到主线程）
          */
-        SuperCompression.newInstance()
+        QCompression.newInstance()
                 .getCompressionBuilder(null)
                 .from("")
                 .setMaxSize(100)
-                .get(new SuperCompression.CompressionCallback() {
+                .get(new QCompression.CompressionCallback() {
                     @Override
                     public void onStart(Context context) {
 
@@ -110,7 +109,7 @@ public class OrmTest {
         /***
          *配合线程调度工具使用
          */
-        WorkHandler.from(SuperCompression.newInstance())
+        WorkHandler.from(QCompression.newInstance())
                 .executeOn(WorkHandler.schedulerWorkThread())
                 .map(arg -> arg.getCompressionBuilder(null))
                 .map(arg -> arg.setWidth(100).setMaxSize(100).setHeight(100))
@@ -129,9 +128,9 @@ public class OrmTest {
                 });
 
         //调用相册
-        PhotoUtils.select((Fragment) null, (uri, result, arg) -> {
+        QPhotoUtils.select((Fragment) null, (uri, result, arg) -> {
             if (result) {
-                SuperCompression.newInstance()
+                QCompression.newInstance()
                         .getCompressionBuilder(null)
                         .from(uri)
                         .setMaxSize(100)

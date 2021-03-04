@@ -2,14 +2,13 @@ package com.zyq.SuperCompression;
 
 import android.app.Activity;
 import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.TextUtils;
@@ -21,18 +20,20 @@ import androidx.fragment.app.FragmentManager;
 
 import java.io.File;
 import java.lang.RuntimeException;
+
 import static com.zyq.SuperCompression.FileUtils.UriToFile;
 
 
-public class PhotoUtils {
+public class QPhotoUtils {
 
-    static String authorities = "";
+    public static String authorities = "";
 
-   public interface Callback {
+
+    public interface Callback {
         void let(Uri uri, boolean result, String arg);
     }
 
-    static class PhotoFragment extends Fragment {
+    public static class PhotoFragment extends Fragment {
         private final int REQUEST_CODE_CROP = 601;
         private final int REQUEST_CODE_CAMERA = 602;
         private final int REQUEST_CODE_SELECT = 603;
@@ -57,17 +58,19 @@ public class PhotoUtils {
             this.cameraCallback = callback;
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             intent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1);
-            File file = new File(requireContext().getExternalCacheDir().getAbsolutePath() +
+            File file = new File(requireContext().getExternalFilesDir(Environment.DIRECTORY_DCIM).getAbsolutePath() +
                     System.currentTimeMillis() + ".jpg");
             cameraPath = file.getAbsolutePath();
             Uri uri = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 uri = FileProvider.getUriForFile(requireContext(), authorities, file);
             } else {
                 uri = Uri.fromFile(file);
             }
+//            if(!JumpAuthorities){
             intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+//            }
             startActivityForResult(intent, REQUEST_CODE_CAMERA);
         }
 
@@ -88,7 +91,7 @@ public class PhotoUtils {
             if (TextUtils.isEmpty(authorities))
                 throw new RuntimeException("请填写正确的authority");
             Uri uri1 = null;
-            if (uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
+            if ( uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
                 uri1 = FileProvider.getUriForFile(requireContext(), authorities, UriToFile(requireContext(), uri));
             } else {
                 uri1 = uri;
@@ -193,10 +196,12 @@ public class PhotoUtils {
         }
     }
 
-    private static PhotoUtils.PhotoFragment getPhotoFragment(FragmentManager manager) {
-        PhotoUtils.PhotoFragment photoFragment = (PhotoUtils.PhotoFragment) manager.findFragmentByTag("photoFragmen");
+    private static QPhotoUtils.PhotoFragment getPhotoFragment(FragmentManager manager) {
+        QPhotoUtils.PhotoFragment photoFragment = (QPhotoUtils.PhotoFragment) manager.findFragmentByTag("photoFragmen");
         if (photoFragment == null) {
-            photoFragment = new PhotoUtils.PhotoFragment();
+            photoFragment = new QPhotoUtils.PhotoFragment();
+        } else {
+            return photoFragment;
         }
         manager.beginTransaction()
                 .add(photoFragment, "photoFragmen")
@@ -210,7 +215,7 @@ public class PhotoUtils {
      * 打开相册
      */
 
-   public static void select(FragmentManager manager, Callback photoCallBack) {
+    public static void select(FragmentManager manager, Callback photoCallBack) {
         getPhotoFragment(manager).select(photoCallBack);
     }
 
@@ -264,14 +269,14 @@ public class PhotoUtils {
     /**
      * 调用裁剪功能
      */
-    public  static Crop crop(FragmentManager manager) {
+    public static Crop crop(FragmentManager manager) {
         return new Crop(manager);
     }
 
     /**
      * 调用裁剪功能
      */
-    public  static Crop crop(FragmentActivity activity) {
+    public static Crop crop(FragmentActivity activity) {
         return crop(activity.getSupportFragmentManager());
     }
 

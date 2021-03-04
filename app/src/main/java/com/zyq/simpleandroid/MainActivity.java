@@ -6,10 +6,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 
-import com.google.gson.Gson;
-import com.jfz.wealth.BuildConfig;
 import com.jfz.wealth.R;
-import com.zyq.SuperCompression.SuperCompression;
+import com.zyq.SuperCompression.QCompression;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.handler.WorkHandler;
 import com.zyq.simplestore.imp.DbTableName;;
@@ -60,13 +58,13 @@ public class MainActivity extends AppCompatActivity {
                         LightLog.i("错误信息：" + e.getMessage());
                     }
                 });
-        SuperCompression.newInstance()
+        QCompression.newInstance()
                 .getCompressionBuilder(null)
                 .from("")
                 .setHeight(100)
                 .setWidth(100)
                 .setMaxSize(100)
-                .get(new SuperCompression.CompressionCallback() {
+                .get(new QCompression.CompressionCallback() {
                     @Override
                     public void onStart(Context context) {
 

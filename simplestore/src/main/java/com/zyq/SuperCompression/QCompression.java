@@ -1,14 +1,11 @@
 package com.zyq.SuperCompression;
 
-import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
-import android.provider.MediaStore;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -17,7 +14,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -26,13 +22,13 @@ import java.util.concurrent.Executors;
 /**
  * 简单压缩框架
  */
-public class SuperCompression {
+public class QCompression {
 
     CompressionBuilder compressionBuilder;
     CompressionCallback callback;
 
-    public static SuperCompression newInstance() {
-        return new SuperCompression();
+    public static QCompression newInstance() {
+        return new QCompression();
     }
 
     public static CompressionBuilder newBuilderInstance(Context context) {
@@ -40,7 +36,7 @@ public class SuperCompression {
     }
 
     static List<File> newInstanceToGet(CompressionBuilder compressionBuilder, CompressionCallback callback) {
-        return new SuperCompression(compressionBuilder).get(callback);
+        return new QCompression(compressionBuilder).get(callback);
     }
 
     public CompressionBuilder getCompressionBuilder(Context context) {
@@ -65,7 +61,7 @@ public class SuperCompression {
         return clone;
     }
 
-    SuperCompression() {
+    QCompression() {
 
     }
 
@@ -101,7 +97,10 @@ public class SuperCompression {
                     });
                 } catch (Exception e) {
                     e.printStackTrace();
-                    callback.onErr(e);
+                    new Handler(compressionBuilder.context.getMainLooper()).post(() -> {
+                        callback.onErr(e);
+                    });
+
                 }
             });
         }
@@ -168,6 +167,7 @@ public class SuperCompression {
 
     /**
      * 质量压缩方法
+     *
      * @param image
      * @return
      */
@@ -218,7 +218,7 @@ public class SuperCompression {
 
     }
 
-    private SuperCompression(CompressionBuilder compressionBuilder) {
+    private QCompression(CompressionBuilder compressionBuilder) {
         this.compressionBuilder = compressionBuilder;
     }
 
@@ -345,7 +345,7 @@ public class SuperCompression {
         }
 
         public List<File> get(CompressionCallback compressionCallback) {
-            return SuperCompression.newInstanceToGet(this, compressionCallback);
+            return QCompression.newInstanceToGet(this, compressionCallback);
         }
     }
 

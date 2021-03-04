@@ -20,7 +20,7 @@ public class MapWorkHandler<K, V> extends WorkHandler<Map<K, V>> {
         return this;
     }
 
-    public <M, N> MapWorkHandler<M, N> praseType(Class<M> key, Class<N> value) {
+    public <M, N> MapWorkHandler<M, N> ParsingType(Class<M> key, Class<N> value) {
         return (MapWorkHandler<M, N>) this;
     }
 
