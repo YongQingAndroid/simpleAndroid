@@ -80,7 +80,7 @@ public class OrmTest {
          */
         QCompression.newInstance()
                 .getCompressionBuilder(null)
-                .from("")
+                .from("url")
                 .setMaxSize(100)
                 .get();
         /**

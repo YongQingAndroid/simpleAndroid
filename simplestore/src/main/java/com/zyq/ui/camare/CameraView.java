@@ -1,22 +1,26 @@
 package com.zyq.ui.camare;
 
 import android.content.Context;
-import android.content.Intent;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.hardware.Camera;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.zyq.simplestore.log.LightLog;
@@ -34,13 +38,15 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
     private OverCameraView mOverCameraView;
     private Camera mCamera;
     private boolean isFoucing;
-    private LinearLayout mPhotoLayout, mConfirmLayout;
+    private LinearLayout mConfirmLayout;
+    private RelativeLayout mPhotoLayout;
     private View maskView, tackPhotoView;//遮罩
     private CameraDrawable cameraDrawable;
     private boolean isTakePhoto;
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
     private CameraCall cameraCall;
+    private int[] state_press = new int[]{android.R.attr.state_pressed, android.R.attr.state_enabled};
 
     public void setCameraCall(CameraCall cameraCall) {
         this.cameraCall = cameraCall;
@@ -65,25 +71,50 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     private void initUi() {
-        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, sp2px(80));
         lp.gravity = Gravity.BOTTOM;
 
-        mPhotoLayout = new LinearLayout(getContext());
+        mPhotoLayout = new RelativeLayout(getContext());
+        mPhotoLayout.setGravity(Gravity.CENTER_VERTICAL);
         mPhotoLayout.setLayoutParams(lp);
-        mPhotoLayout.setGravity(Gravity.CENTER);
-        mPhotoLayout.setOrientation(LinearLayout.HORIZONTAL);
+
+        mPhotoLayout.setPadding(0, sp2px(10), 0, sp2px(10));
         tackPhotoView = new View(getContext());
-        tackPhotoView.setBackground(new ColorDrawable(Color.RED));
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(100, 100);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(sp2px(60), sp2px(60));
+        layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
 
         tackPhotoView.setOnClickListener(this);
+        StateListDrawable btnDrawable = new StateListDrawable();
+        btnDrawable.addState(state_press, new ButtonDrawable(getContext(), Color.YELLOW));
+        btnDrawable.addState(new int[]{}, new ButtonDrawable(getContext()));
+
+
+        tackPhotoView.setBackground(btnDrawable);
         mPhotoLayout.addView(tackPhotoView, layoutParams);
+        mPhotoLayout.setBackgroundColor(Color.BLACK);
 
 
+        TextView textView = new TextView(getContext());
+        textView.setText("取消");
+        textView.setGravity(Gravity.CENTER);
+        textView.setTextColor(Color.WHITE);
+        RelativeLayout.LayoutParams layoutParams1 = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layoutParams1.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        layoutParams1.rightMargin=sp2px(10);
+        mPhotoLayout.addView(textView, layoutParams1);
+        textView.setOnClickListener(view -> {
+            if (cameraCall != null)
+                cameraCall.call(false, null);
+        });
+
+
+        LayoutParams lp2 = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         mConfirmLayout = new LinearLayout(getContext());
-        mConfirmLayout.setLayoutParams(lp);
+        mConfirmLayout.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        mConfirmLayout.setLayoutParams(lp2);
         mConfirmLayout.setOrientation(LinearLayout.HORIZONTAL);
         mConfirmLayout.setVisibility(View.GONE);
+        mConfirmLayout.setBackground(new CameraDrawable(getContext(), 255));
         Button cancel = new Button(getContext());
         cancel.setText("取消");
         cancel.setOnClickListener(view -> {
@@ -98,6 +129,10 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
         mConfirmLayout.addView(cancel);
         mConfirmLayout.addView(submit);
 
+    }
+
+    private int sp2px(int spValue) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, spValue, getContext().getResources().getDisplayMetrics());
     }
 
     private void cancleSavePhoto() {
@@ -158,11 +193,7 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
         return super.onTouchEvent(event);
     }
 
-    //    /**
-//     * 注释：自动对焦回调
-//     * 时间：2019/3/1 0001 10:02
-//     * 作者：郭翰林
-//     */
+
     private Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
@@ -182,7 +213,7 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
 
     private void savePhoto() {
         FileOutputStream fos = null;
-        String cameraPath = Environment.getExternalStorageDirectory().getPath() + File.separator + "DCIM" + File.separator + "Camera";
+        String cameraPath = getContext().getExternalFilesDir(Environment.DIRECTORY_DCIM).getAbsolutePath() + File.separator + "DCIM" + File.separator + "Camera";
         //相册文件夹
         File cameraFolder = new File(cameraPath);
         if (!cameraFolder.exists()) {

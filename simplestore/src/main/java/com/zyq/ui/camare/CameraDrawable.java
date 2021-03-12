@@ -16,7 +16,8 @@ public class CameraDrawable extends Drawable {
     int bgColor = android.graphics.Color.BLACK;
     RectF rectF;
     Context context;
-    int space = 15, Alpha = 200;
+    int space = 15, Alpha = 160;
+    int canvasWidth = -1, canvasHeight = -1;
 
     CameraDrawable(Context context) {
         this.context = context;
@@ -49,10 +50,13 @@ public class CameraDrawable extends Drawable {
 
     @Override
     public void draw(Canvas canvas) {
-        int radio = 10;
-        int canvasWidth = canvas.getWidth();
-        int canvasHeight = canvas.getHeight();
-        setRectf(canvasWidth, canvasHeight);
+        int radio = sp2px(5);
+        if (canvasWidth == -1)
+            canvasWidth = canvas.getWidth();
+        if (canvasHeight == -1)
+            canvasHeight = canvas.getHeight();
+        if (rectF == null)
+            setRectf(canvasWidth, canvasHeight);
         Paint paint1 = new Paint();
         paint1.setColor(Color.WHITE);
         paint1.setAntiAlias(true);
@@ -63,9 +67,7 @@ public class CameraDrawable extends Drawable {
         paint.setColor(bgColor);
 
         paint.setAlpha(Alpha);
-        String msg = "请把证件放入框内";
-        float ww = paint1.measureText(msg);
-        canvas.drawText(msg, (canvasWidth - ww) / 2, canvasHeight / 2, paint1);
+
 
         int layerId = canvas.saveLayer(0, 0, canvasWidth, canvasHeight, null, Canvas.ALL_SAVE_FLAG);
 
@@ -76,10 +78,21 @@ public class CameraDrawable extends Drawable {
         paint.setXfermode(null);
         canvas.restoreToCount(layerId);
 
+        paint1.setAlpha(120);
+        String msg = "请把证件放入框内";
+        float ww = paint1.measureText(msg);
+        canvas.drawText(msg, (canvasWidth - ww) / 2, canvasHeight / 2, paint1);
 
+        String msg2 = "点击屏幕对焦";
+        float ww2 = paint1.measureText(msg2);
+        paint1.setTextSize(sp2px(12));
+        canvas.drawText(msg2, (canvasWidth - ww2) / 2, canvasHeight / 2 + space + paint1.getTextSize(), paint1);
+
+//        paint1.setAlpha(255);
         paint1.setStyle(Paint.Style.STROKE);
         paint1.setStrokeWidth(5);
         canvas.drawRoundRect(rectF, radio, radio, paint1);
+
 
         canvas.save();
     }

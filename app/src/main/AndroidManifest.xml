@@ -7,12 +7,11 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -22,16 +21,21 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name="com.zyq.simpleandroid.Main2Activity">
+        <activity
+            android:name="com.zyq.simpleandroid.ScrollingActivity"
+
+            android:theme="@style/Theme.Design.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.zyq.simpleandroid.MainActivity">
+        <activity android:name="com.zyq.simpleandroid.Main3Activity">
 
         </activity>
+        <activity android:name="com.zyq.simpleandroid.Main2Activity"></activity>
+        <activity android:name="com.zyq.simpleandroid.MainActivity" />
         <activity android:name="com.cmic.sso.sdk.activity.LoginAuthActivity" />
 
         <provider
@@ -39,10 +43,12 @@
             android:authorities="com.jfz.wealth.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
-            android:resource="@xml/filepaths"/>
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
         </provider>
 
+        <activity android:name="com.zyq.ui.camare.CameraActivity" />
     </application>
 
 </manifest>

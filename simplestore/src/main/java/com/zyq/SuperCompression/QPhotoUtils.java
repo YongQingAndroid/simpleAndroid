@@ -2,6 +2,7 @@ package com.zyq.SuperCompression;
 
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -13,6 +14,13 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.TextUtils;
 
+import com.zyq.permission.OnPermission;
+import com.zyq.permission.Permission;
+import com.zyq.permission.QPermissions;
+import com.zyq.ui.camare.CameraActivity;
+import com.zyq.ui.camare.CameraView;
+
+import androidx.annotation.RequiresApi;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -20,6 +28,7 @@ import androidx.fragment.app.FragmentManager;
 
 import java.io.File;
 import java.lang.RuntimeException;
+import java.util.List;
 
 import static com.zyq.SuperCompression.FileUtils.UriToFile;
 
@@ -28,6 +37,7 @@ public class QPhotoUtils {
 
     public static String authorities = "";
 
+    private Executer executer;
 
     public interface Callback {
         void let(Uri uri, boolean result, String arg);
@@ -47,6 +57,24 @@ public class QPhotoUtils {
             setRetainInstance(true);
         }
 
+        @Override
+        public void onResume() {
+            super.onResume();
+            QPermissions.with(getActivity()).permission(Permission.CAMERA, Permission.MANAGE_EXTERNAL_STORAGE).request(new OnPermission() {
+                @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+                @Override
+                public void hasPermission(List<String> granted, boolean all) {
+                    if (all) {
+
+                    }
+                }
+
+                @Override
+                public void noPermission(List<String> denied, boolean never) {
+
+                }
+            });
+        }
 
         String cameraPath;
 
@@ -58,11 +86,11 @@ public class QPhotoUtils {
             this.cameraCallback = callback;
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             intent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1);
-            File file = new File(requireContext().getExternalFilesDir(Environment.DIRECTORY_DCIM).getAbsolutePath() +
+            File file = new File(requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath() +
                     System.currentTimeMillis() + ".jpg");
             cameraPath = file.getAbsolutePath();
             Uri uri = null;
-            if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 uri = FileProvider.getUriForFile(requireContext(), authorities, file);
             } else {
@@ -91,7 +119,7 @@ public class QPhotoUtils {
             if (TextUtils.isEmpty(authorities))
                 throw new RuntimeException("请填写正确的authority");
             Uri uri1 = null;
-            if ( uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
+            if (uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
                 uri1 = FileProvider.getUriForFile(requireContext(), authorities, UriToFile(requireContext(), uri));
             } else {
                 uri1 = uri;
@@ -253,6 +281,10 @@ public class QPhotoUtils {
                 camera(photoCallBack);
     }
 
+    public static void cameraCard(Context activity, CameraView.CameraCall cameraCall) {
+        CameraActivity.startCamera(activity, cameraCall);
+    }
+
     /**
      * 调用相机拍照
      */
@@ -314,5 +346,8 @@ public class QPhotoUtils {
         void build(Uri uri, Callback cropCallBack) {
             crop(manager, uri, aspectX, aspectY, outputX, outputY, cropCallBack);
         }
+    }
+    interface Executer {
+        void exe(Callback callback);
     }
 }
