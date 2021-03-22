@@ -73,6 +73,7 @@ public class Main {
         DbOrmHelper.getInstent().save(obj1);
         //删
         DbOrmHelper.getInstent().remove(obj1); //删除数据
+        DbOrmHelper.getInstent().remove(TableBean.class,WhereBulider.creat().where("name=?","lisa"));
         DbOrmHelper.getInstent().remove(TableBean.class);//删除表
         //改
         obj1.name = "修改名字";

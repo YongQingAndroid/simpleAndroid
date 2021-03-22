@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
+
     <LinearLayout
         android:id="@+id/group"
         android:layout_width="match_parent"
@@ -32,6 +33,54 @@
             android:layout_height="100dp"
             android:background="@color/colorPrimary" />
 
+        <com.zyq.simpleandroid.MarqueeGroup
+            android:layout_width="300dp"
+            android:id="@+id/MarqueeGroup"
+            android:background="@color/colorAccent"
+            android:layout_height="wrap_content"
+            >
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:gravity="center_vertical"
+                android:text="item----1 "
+                android:textColor="#fff" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:gravity="center_vertical"
+                android:text="item----2 "
+                android:textColor="#fff" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:gravity="center_vertical"
+                android:text="item----3  "
+                android:textColor="#fff" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:gravity="center_vertical"
+                android:text="item----4 "
+                android:textColor="#fff" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:gravity="center_vertical"
+                android:text="item----5  "
+                android:textColor="#fff" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:gravity="center_vertical"
+                android:text="item----6 "
+                android:textColor="#fff" />
+
+        </com.zyq.simpleandroid.MarqueeGroup>
 
     </LinearLayout>
 

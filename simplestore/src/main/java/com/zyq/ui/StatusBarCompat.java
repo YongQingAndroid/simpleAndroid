@@ -7,7 +7,12 @@ import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
+
+import androidx.core.view.ViewCompat;
+
+import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 
 public class StatusBarCompat {
 
@@ -41,23 +46,28 @@ public class StatusBarCompat {
 
     }
 
-    public void barTransparent(Activity context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            context.getWindow().setStatusBarColor(Color.TRANSPARENT);
-            context.getWindow().setNavigationBarColor(Color.TRANSPARENT);
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-//                getWindow().getAttributes().flags
-            if (WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS == 0) {
-                context.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+
+    public static void barTransparent(Activity context) {
+        Window window = context.getWindow();
+        if (Build.VERSION.SDK_INT >= 21) {
+
+            //添加Flag把状态栏设为可绘制模式
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            //view不根据系统窗口来调整自己的布局
+            ViewGroup mContentView = window.findViewById(Window.ID_ANDROID_CONTENT);
+            View mChildView = mContentView.getChildAt(0);
+            if (mChildView != null) {
+                ViewCompat.setFitsSystemWindows(mChildView, false);
+                ViewCompat.requestApplyInsets(mChildView);
             }
-
-            if (WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION == 0) {
-                context.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-            }
-
-
+        } else {
+            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         }
+
     }
 
     public static void compat(Activity activity) {

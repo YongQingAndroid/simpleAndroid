@@ -1,6 +1,7 @@
 package com.zyq.simplestore;
 
 import com.alibaba.fastjson.JSON;
+import com.zyq.handler.SimpleThreadHandler;
 import com.zyq.simplestore.core.DbOrmHelper;
 import com.zyq.simplestore.core.TableCatch;
 import com.zyq.handler.ThreadPool;
@@ -102,11 +103,20 @@ public class SimpleStore {
          * @param <T>
          */
         public <T> void get(Class<T> type, storeCall<T> call) {
+            SimpleThreadHandler.getInstance().execute(new SimpleThreadHandler.SimpleHandlerCall() {
+                @Override
+                public Object doInBackground() {
+                    return get(type);
+                }
 
-            Object obj = get(type);
-            if (obj != null) {
-                call.call((T) obj);
-            }
+                @Override
+                public void complete(Object obj) {
+                    super.complete(obj);
+                    if (call != null) {
+                        call.call((T) obj);
+                    }
+                }
+            });
         }
     }
 

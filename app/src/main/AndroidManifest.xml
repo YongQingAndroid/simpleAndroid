@@ -25,16 +25,18 @@
             android:name="com.zyq.simpleandroid.ScrollingActivity"
 
             android:theme="@style/Theme.Design.NoActionBar">
+
+        </activity>
+        <activity android:name="com.zyq.simpleandroid.Main3Activity">
+
+        </activity>
+        <activity android:name="com.zyq.simpleandroid.Main2Activity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.zyq.simpleandroid.Main3Activity">
-
-        </activity>
-        <activity android:name="com.zyq.simpleandroid.Main2Activity"></activity>
         <activity android:name="com.zyq.simpleandroid.MainActivity" />
         <activity android:name="com.cmic.sso.sdk.activity.LoginAuthActivity" />
 

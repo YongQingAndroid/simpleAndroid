@@ -229,21 +229,20 @@ public final class ReflectiveTypeAdapterFactory implements TypeAdapterFactory {
             try {
                 in.beginObject();
                 while (in.hasNext()) {
-                    String name = in.nextName();
-                    BoundField field = boundFields.get(name);
-                    if (field == null || !field.deserialized) {
-                        in.skipValue();
-                    } else {
-                        try {
+                    try {
+                        String name = in.nextName();
+                        BoundField field = boundFields.get(name);
+                        if (field == null || !field.deserialized) {
+                            in.skipValue();
+                        } else {
                             field.read(in, instance);
-                        } catch (Exception e) {
-                            if (strictMode) {
-                                throw e;
-                            } else {
-                                in.skipValue();
-                                continue;
-                            }
-
+                        }
+                    } catch (Exception e) {
+                        if (strictMode) {
+                            throw e;
+                        } else {
+                            in.skipValue();
+                            continue;
                         }
                     }
                 }
