@@ -1,12 +1,10 @@
 package com.zyq.simpleandroid;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
-import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,8 +21,6 @@ import com.zyq.SuperCompression.QPhotoUtils;
 import com.zyq.permission.OnPermission;
 import com.zyq.permission.Permission;
 import com.zyq.permission.QPermissions;
-import com.zyq.ui.StatusBarCompat;
-import com.zyq.ui.camare.CameraActivity;
 import com.zyq.ui.camare.CameraView;
 
 import java.io.File;
@@ -32,7 +28,7 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.AppCompatTextView;
 
 
 public class Main2Activity extends BaseActivity {
@@ -56,13 +52,18 @@ public class Main2Activity extends BaseActivity {
 //        });
     }
 
-
+    public void pause(View view){
+        if(mMarqueeGroup!=null){
+            mMarqueeGroup.pause();
+        }
+    }
     public void goLogin(View view) {
-        mMarqueeGroup = findViewById(R.id.MarqueeGroup);
-        new MarqueeGroup.Builder().setAdapter(new Adapter()).setShowLine(5).bindView(mMarqueeGroup);
-//        new MarqueeGroup.Builder().setShowLine(3).bindView(mMarqueeGroup);
-        mMarqueeGroup.start();
+//        mMarqueeGroup = findViewById(R.id.MarqueeGroup);
+//        new MarqueeGroup.Builder().setAdapter(new Adapter()).setShowLine(1).setCatchSize(5).setRecycle(false).bindView(mMarqueeGroup);
+////        new MarqueeGroup.Builder().setShowLine(3).bindView(mMarqueeGroup);
+//        mMarqueeGroup.start();
 //        StatusBarCompat.barTransparent(this);
+        QPhotoUtils.authorities = "com.jfz.wealth.fileprovider";
 //        QPhotoUtils.cameraCard(this, (flag, path) -> {
 //            if (flag) {
 //                Glide.with(Main2Activity.this).load(path).into(img1);
@@ -74,11 +75,16 @@ public class Main2Activity extends BaseActivity {
 
 //        QPhotoUtils.authorities = "com.jfz.wealth.fileprovider";
 //
-//        QPermissions.with(this).permission(Permission.CAMERA, Permission.MANAGE_EXTERNAL_STORAGE).request(new OnPermission() {
-//            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-//            @Override
-//            public void hasPermission(List<String> granted, boolean all) {
-//                if (all) {
+        QPermissions.with(this).permission(Permission.CAMERA, Permission.MANAGE_EXTERNAL_STORAGE).request(new OnPermission() {
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+            @Override
+            public void hasPermission(List<String> granted, boolean all) {
+                if (all) {
+                   new QPhotoUtils.Builder().bind(Main2Activity.this).setCrop(QPhotoUtils.Crop.create()).select((uri, result, arg) -> {
+                       ImageView img1 = findViewById(R.id.img1);
+                        Glide.with(Main2Activity.this).load(uri).into(img1);
+                   });
+
 //                    QPhotoUtils.camera(Main2Activity.this, (uri, result, arg) -> {
 //                        QCompression.newInstance()
 //                                .getCompressionBuilder(Main2Activity.this)
@@ -105,14 +111,14 @@ public class Main2Activity extends BaseActivity {
 //                                });
 //
 //                    });
-//                }
-//            }
-//
-//            @Override
-//            public void noPermission(List<String> denied, boolean never) {
-//
-//            }
-//        });
+                }
+            }
+
+            @Override
+            public void noPermission(List<String> denied, boolean never) {
+
+            }
+        });
 
 
     }
@@ -124,7 +130,7 @@ public class Main2Activity extends BaseActivity {
     static class Adapter extends MarqueeGroup.MarqueeAdapter<Holder> {
         @Override
         public int getItemCount() {
-            return 50;
+            return 5;
         }
 
         @Override
@@ -137,7 +143,19 @@ public class Main2Activity extends BaseActivity {
         public void bindViewHolder(Holder holder, int position) {
             int[] colors = new int[]{Color.BLUE, Color.RED};
             holder.textView.setBackgroundColor(colors[position % 2]);
+//            if(position%2==0){
+//                holder.textView.setTextSize(30);
+//            }else {
+//                holder.textView.setTextSize(15);
+//            }
             holder.textView.setText("----item------" + position);
+//            holder.textView.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    holder.textView.setText("----item------" + position);
+//                }
+//            });
+
         }
     }
 
@@ -146,8 +164,11 @@ public class Main2Activity extends BaseActivity {
 
         public Holder(@NonNull View itemView) {
             super(itemView);
-            textView = itemView.findViewById(R.id.testId);
+            textView = itemView.findViewById(R.id.tv_name);
             textView.setBackgroundColor(Color.YELLOW);
+            itemView.setOnClickListener(view -> {
+//                Toast.makeText(view.getContext(), "position"+getAdapterPosition(), Toast.LENGTH_SHORT).show();
+            });
         }
     }
 

@@ -19,7 +19,12 @@
             android:onClick="getToken"
             android:text="loginAuth"
             android:visibility="gone" />
-
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="pause"
+            android:text="pause"
+             />
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -34,9 +39,10 @@
             android:background="@color/colorPrimary" />
 
         <com.zyq.simpleandroid.MarqueeGroup
-            android:layout_width="300dp"
+            android:layout_width="match_parent"
+            android:layout_margin="50dp"
             android:id="@+id/MarqueeGroup"
-            android:background="@color/colorAccent"
+            android:background="@color/cardview_dark_background"
             android:layout_height="wrap_content"
             >
 

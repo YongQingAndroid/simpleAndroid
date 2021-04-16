@@ -7,54 +7,73 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MarqueeGroup extends ViewGroup {
-    Handler handler = new Handler(Looper.getMainLooper());
-    Runnable runnable = null;
-    boolean isStart = true;
-    Builder Builder;
-    RecycleCallBack recycleCallBack;
-    ObjectAnimatorEvent objectAnimatorEvent = new ObjectAnimatorEvent();
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable runnable = null;
+    private boolean isStart = true, mPause = false;
+    private Builder Builder;
+    private RecycleCallBack recycleCallBack;
+    private ObjectAnimatorEvent objectAnimatorEvent = new ObjectAnimatorEvent();
+    ExecutorService cachedThreadPool = Executors.newSingleThreadExecutor();
+    int offset = 0;
+    Runnable rotationThread;
 
     public MarqueeGroup(Context context, AttributeSet attrs) {
         super(context, attrs);
         if (Builder == null)
             Builder = new Builder();
+        init();
+    }
+
+    private void init() {
+        runnable = () -> animation();
+        rotationThread = () -> {
+            try {
+                while (isStart) {
+                    Thread.sleep(Builder.animationTime + Builder.intervals);
+                    if (!mPause)
+                        handler.post(runnable);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        };
+    }
+
+    public void pause(boolean flag) {
+        this.mPause = flag;
+    }
+
+    public void pause() {
+        pause(!this.mPause);
     }
 
     private void stop() {
         isStart = false;
     }
 
+
     public void start() {
+        isStart = false;
         if (Builder != null && Builder.adapterManager != null) {
             removeAllViews();
             Builder.bindRootView(this);
         }
-        handler.removeCallbacks(runnable);
-        runnable = () -> animation();
-        handler.postDelayed(() -> {
-            new Thread(() -> {
-                try {
-                    while (isStart) {
-                        Thread.sleep(Builder.animationTime + Builder.intervals);
-                        handler.post(runnable);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-        }, 1000);
-
+        cachedThreadPool.execute(rotationThread);
+        isStart = true;
     }
 
-    int offset = 0;
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -200,19 +219,21 @@ public class MarqueeGroup extends ViewGroup {
                 maxY = maxY > view.getY() ? maxY : view.getY();
             }
         }
-
+        int curHeight = 0;
         int MeasuredHeight = 0;
         if (handleView.size() > 0) {
             MeasuredHeight = handleView.get(0).getMeasuredHeight();
         }
-        int curHeight = 0;
         for (View mView : handleView) {
-            if (recycleCallBack != null) {
-                recycleCallBack.call(mView);
-            }
             curHeight += MeasuredHeight;
             mView.setTranslationY(0);
             mView.layout(mView.getLeft(), (int) (maxY + curHeight), mView.getRight(), (int) (maxY + curHeight + MeasuredHeight));
+            if (recycleCallBack != null) {
+                handler.post(() -> {
+                    recycleCallBack.call(mView);
+                });
+
+            }
         }
     }
 
@@ -221,19 +242,39 @@ public class MarqueeGroup extends ViewGroup {
     }
 
     public static class Builder {
-        int showLine = 3;
-        int intervals = 3000; //间隔时间
-        int animationTime = 700;//动画时间
-        AdapterManager adapterManager;
+        private int showLine = 3;
+        private int intervals = 3000; //间隔时间
+        private int animationTime = 700;//动画时间
+        private AdapterManager adapterManager;
+        private int catchSize = 3;
+        private boolean isRecycle = false;//复用视图目前不稳定
 
         public int getShowLine() {
             return showLine;
+        }
+
+        public int getCatchSize() {
+            return catchSize;
+        }
+
+        public Builder setCatchSize(int catchSize) {
+            this.catchSize = catchSize;
+            return this;
         }
 
         public Builder setAdapter(MarqueeAdapter adapter) {
             adapterManager = new AdapterManager();
             adapterManager.Builder = this;
             adapterManager.adapter = adapter;
+            return this;
+        }
+
+        public boolean isRecycle() {
+            return isRecycle;
+        }
+
+        public Builder setRecycle(boolean recycle) {
+            isRecycle = recycle;
             return this;
         }
 
@@ -304,11 +345,12 @@ public class MarqueeGroup extends ViewGroup {
             LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             viewGroup.removeAllViews();
             int i = 0;
-            LinearLayout layout;
+            FrameLayout layout;
             int size = getAdapter().getItemCount();
             size = size < (Builder.showLine + 2) ? size : (Builder.showLine + 2);
+            size = size > Builder.catchSize ? size : Builder.catchSize;
             while (i < size) {
-                layout = new LinearLayout(viewGroup.getContext());
+                layout = new FrameLayout(viewGroup.getContext());
                 viewGroup.addView(layout, layoutParams);
                 bindHolder(layout, i);
                 i++;
@@ -316,7 +358,9 @@ public class MarqueeGroup extends ViewGroup {
         }
 
         protected void changeUI(View viewGroup) {
-            bindHolder((MarqueeHolder) viewGroup.getTag(), number % adapter.getItemCount());
+            if (Builder.isRecycle) {
+                bindHolder((MarqueeHolder) viewGroup.getTag(), number % adapter.getItemCount());
+            }
         }
 
         private void bindHolder(MarqueeHolder holder, int position) {
@@ -327,6 +371,7 @@ public class MarqueeGroup extends ViewGroup {
                 return;
             }
             adapter.bindViewHolder(holder, position);
+            holder.adapterPosition = position;
             number++;
         }
 
@@ -360,11 +405,15 @@ public class MarqueeGroup extends ViewGroup {
 
     public static class MarqueeHolder {
         public View itemView;
+        private int adapterPosition = 0;
 
         MarqueeHolder(View itemView) {
             this.itemView = itemView;
         }
 
+        public int getAdapterPosition() {
+            return adapterPosition;
+        }
     }
 
     public interface BaseMarqueeAdapter<T extends MarqueeHolder> {

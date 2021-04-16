@@ -11,10 +11,6 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 
-import com.zyq.permission.OnPermission;
-import com.zyq.permission.Permission;
-import com.zyq.permission.QPermissions;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,25 +22,9 @@ public class FileUtils {
     public static File UriToFile(Context context, Uri imageUri) {
         return new File(getFileAbsolutePath(context, imageUri));
     }
-
-
-
-//     QPermissions.with(getActivity()).permission(Permission.CAMERA, Permission.MANAGE_EXTERNAL_STORAGE).request(new OnPermission() {
-//        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-//        @Override
-//        public void hasPermission(List<String> granted, boolean all) {
-//            if (all && mExecuterBean != null) {
-//                mExecuterBean.exe();
-//            }
-//        }
-//
-//        @Override
-//        public void noPermission(List<String> denied, boolean never) {
-//
-//        }
-//    });
-//}
-
+    public static File createJpegImage(File parent, String prefix) {
+        return new File(parent, prefix + System.currentTimeMillis() + ".jpg");
+    }
     /**
      * 根据Uri获取文件绝对路径，解决Android4.4以上版本Uri转换 兼容Android 10
      *

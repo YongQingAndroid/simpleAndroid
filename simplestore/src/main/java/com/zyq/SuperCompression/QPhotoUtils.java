@@ -11,7 +11,6 @@ import android.os.Bundle;
 
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.provider.OpenableColumns;
 import android.text.TextUtils;
 
 import com.zyq.permission.OnPermission;
@@ -20,37 +19,64 @@ import com.zyq.permission.QPermissions;
 import com.zyq.ui.camare.CameraActivity;
 import com.zyq.ui.camare.CameraView;
 
+import java.io.File;
+import java.lang.RuntimeException;
+import java.util.List;
+
 import androidx.annotation.RequiresApi;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 
-import java.io.File;
-import java.lang.RuntimeException;
-import java.util.List;
-
 import static com.zyq.SuperCompression.FileUtils.UriToFile;
-
 
 public class QPhotoUtils {
 
     public static String authorities = "";
-
-    private Executer executer;
-
     public interface Callback {
         void let(Uri uri, boolean result, String arg);
     }
+    public static class Builder{
+        private Crop crop;
+        private FragmentManager fragmentManager;
+        private Context context;
+        public Builder bind(FragmentActivity fragmentActivity){
+            this.fragmentManager= fragmentActivity.getSupportFragmentManager();
+            this.context=fragmentActivity;
+            return this;
+        }
+        public Builder bind(Fragment fragment){
+            this.fragmentManager= fragment.getChildFragmentManager();
+            this.context=fragment.getActivity();
+            return this;
+        }
 
+        public Builder setCrop(Crop crop) {
+            this.crop = crop;
+            return this;
+        }
+
+        public  void select(Callback photoCallBack) {
+            getPhotoFragment(this.fragmentManager).setBuilder(this).select(photoCallBack);
+        }
+        public  void camera( Callback photoCallBack) {
+            getPhotoFragment(this.fragmentManager).setBuilder(this).camera(photoCallBack);
+        }
+
+        public  void cameraCard(CameraView.CameraCall cameraCall) {
+            CameraActivity.startCamera(context, cameraCall);
+        }
+    }
     public static class PhotoFragment extends Fragment {
         private final int REQUEST_CODE_CROP = 601;
         private final int REQUEST_CODE_CAMERA = 602;
         private final int REQUEST_CODE_SELECT = 603;
-        private Callback cropCallback = null;
-        private Callback selectCallback = null;
-        private Callback cameraCallback = null;
-
+        private Callback mCallback = null;
+        String cameraPath;
+        Builder builder;
+        File cropFile;
+        Uri outUri = null;
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -76,93 +102,109 @@ public class QPhotoUtils {
             });
         }
 
-        String cameraPath;
+
+
+        public PhotoFragment setBuilder(Builder builder) {
+            this.builder = builder;
+            return this;
+        }
 
         //调用相机
         void camera(Callback callback) {
             if (TextUtils.isEmpty(authorities))
                 throw new RuntimeException("authority不能为空");
 
-            this.cameraCallback = callback;
+            this.mCallback = callback;
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             intent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1);
-            File file = new File(requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath() +
-                    System.currentTimeMillis() + ".jpg");
+            File file =null;
+            file=generateOutput(getActivity());
+
             cameraPath = file.getAbsolutePath();
             Uri uri = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 uri = FileProvider.getUriForFile(requireContext(), authorities, file);
-            } else {
+            }  else {
                 uri = Uri.fromFile(file);
             }
-//            if(!JumpAuthorities){
             intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
-//            }
             startActivityForResult(intent, REQUEST_CODE_CAMERA);
         }
 
         //选择图片
         void select(Callback callback) {
-            this.selectCallback = callback;
+            this.mCallback = callback;
             Intent intent = new Intent();
             intent.setAction(Intent.ACTION_PICK);
             intent.setType("image/*");
             startActivityForResult(intent, REQUEST_CODE_SELECT);
         }
 
-        Uri outUri = null;
 
         //裁剪
-
+        void crop(Crop mCrop,Uri uri){
+            crop(uri, mCrop.aspectX, mCrop.aspectY, mCrop.outputX, mCrop.outputY, mCallback);
+        }
+        private File generateOutput(Context activity) {
+            File dir = StorageUtils.getAppImagesDir(activity);
+            File file = FileUtils.createJpegImage(dir, "pick-tmp-");
+            return file;
+        }
         void crop(Uri uri, int aspectX, int aspectY, int outputX, int outputY, Callback callBack) {
+
             if (TextUtils.isEmpty(authorities))
                 throw new RuntimeException("请填写正确的authority");
             Uri uri1 = null;
-            if (uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q&&uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
                 uri1 = FileProvider.getUriForFile(requireContext(), authorities, UriToFile(requireContext(), uri));
             } else {
                 uri1 = uri;
             }
-//            Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null, null);
-            Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                this.cropCallback = callBack;
-                Intent intent = new Intent("com.android.camera.action.CROP");
-                //文件名
-                String displayName = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
-                cursor.close();
-                outUri = Uri.fromFile(new File(requireContext().getExternalCacheDir().getAbsolutePath() + System.currentTimeMillis() + displayName));
-                requireContext().grantUriPermission(
-                        requireContext().getPackageName(),
-                        outUri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                );
-                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                intent.putExtra("noFaceDetection", true); //去除默认的人脸识别，否则和剪裁匡重叠
-                intent.setDataAndType(uri1, requireContext().getContentResolver().getType(uri));
-                intent.putExtra("crop", "true"); // crop=true 有这句才能出来最后的裁剪页面.
-                intent.putExtra("output", outUri);
-                intent.putExtra("outputFormat", "JPEG"); // 返回格式
-                int ax = aspectX;
-                int ay = aspectY;
-                if (ay != 0 && ay != 0) {
-                    if (ax == ay && Build.MANUFACTURER == "HUAWEI") {
-                        ax = 9998;
-                        ay = 9999;
-                    }
-                    intent.putExtra("aspectX", ax); // 这两项为裁剪框的比例.
-                    intent.putExtra("aspectY", ay);// x:y=1:2
-                }
-                if (outputX != 0 && outputY != 0) {
-                    intent.putExtra("outputX", outputX);
-                    intent.putExtra("outputY", outputY);
-                }
-                intent.putExtra("return-data", false);
-                startActivityForResult(
-                        intent, REQUEST_CODE_CROP
-                );
+            this.mCallback = callBack;
+            Intent intent = new Intent("com.android.camera.action.CROP");
+            //文件名
+            String displayName =System.currentTimeMillis()+"crop.jpg";
+            if (Build.VERSION.SDK_INT >= 30) {
+                //android 11以上，将文件创建在公有目录
+                String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath();
+                //storage/emulated/0/Pictures
+                cropFile = new File(path, System.currentTimeMillis()   + displayName);
+                outUri= Uri.parse("file://" + cropFile.getAbsolutePath());
+            } else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                cropFile = new File(requireContext().getExternalCacheDir().getAbsolutePath() + System.currentTimeMillis() + displayName);
+                outUri= Uri.parse("file://" + cropFile.getAbsolutePath());
+            }else {
+                cropFile=generateOutput(getActivity());
+                outUri=Uri.fromFile(cropFile);
             }
+            requireContext().grantUriPermission(
+                    requireContext().getPackageName(),
+                    outUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+            );
+
+            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.putExtra("noFaceDetection", true); //去除默认的人脸识别，否则和剪裁匡重叠
+            intent.setDataAndType(uri1, "image/*");
+            intent.putExtra("crop", "true"); // crop=true 有这句才能出来最后的裁剪页面.
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, outUri);
+            intent.putExtra("outputFormat", "JPEG"); // 返回格式
+            int ax = aspectX;
+            int ay = aspectY;
+            if (ay != 0 && ay != 0) {
+//
+                intent.putExtra("aspectX", ax); // 这两项为裁剪框的比例.
+                intent.putExtra("aspectY", ay);// x:y=1:2
+            }
+            if (outputX != 0 && outputY != 0) {
+                intent.putExtra("outputX", outputX);
+                intent.putExtra("outputY", outputY);
+            }
+            intent.putExtra("return-data", false);
+            startActivityForResult(
+                    intent, REQUEST_CODE_CROP
+            );
 
         }
 
@@ -174,30 +216,39 @@ public class QPhotoUtils {
                 switch (requestCode) {
                     case REQUEST_CODE_CROP:
                         //裁剪
-                        if (cropCallback != null) {
-                            cropCallback.let(outUri, true, "");
+                        if (mCallback != null) {
+                            mCallback.let(outUri, true, cropFile.getAbsolutePath());
                         }
-                        cropCallback = null;
+                        mCallback = null;
                         break;
                     case REQUEST_CODE_CAMERA:
                         Uri uri = null;
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             uri = FileProvider.getUriForFile(requireContext(),
                                     authorities, new File(cameraPath));
                         } else {
                             uri = Uri.fromFile(new File(cameraPath));
                         }
-                        if (cameraCallback != null) {
-                            cameraCallback.let(uri, true, "");
+                        if(builder.crop!=null){
+                            crop(builder.crop,uri);
+                            return;
                         }
-                        cameraCallback = null;
+                        if (mCallback != null) {
+                            mCallback.let(uri, true, cameraPath);
+                        }
+                        mCallback = null;
                         break;
                     case REQUEST_CODE_SELECT:
                         Uri uri2 = data.getData();
-                        if (selectCallback != null) {
-                            selectCallback.let(uri2, true, "");
+                        if(builder.crop!=null){
+                            crop(builder.crop,uri2);
+                            return;
                         }
-                        selectCallback = null;
+                        if (mCallback != null) {
+                            String path=FileUtils.getFileAbsolutePath(getActivity(),uri2);
+                            mCallback.let(uri2, true, path);
+                        }
+                        mCallback = null;
                         break;
 
                 }
@@ -207,17 +258,17 @@ public class QPhotoUtils {
                 switch (requestCode) {
                     case REQUEST_CODE_CROP:
                         //裁剪
-                        cropCallback.let(null, false, "裁剪失败");
-                        cropCallback = null;
+                        mCallback.let(null, false, "裁剪失败");
+                        mCallback = null;
                         break;
                     case REQUEST_CODE_CAMERA:
-                        cameraCallback.let(null, false, "拍照失败");
-                        cameraCallback = null;
+                        mCallback.let(null, false, "拍照失败");
+                        mCallback = null;
                         break;
 
                     case REQUEST_CODE_SELECT:
-                        selectCallback.let(null, false, "选择图片失败");
-                        selectCallback = null;
+                        mCallback.let(null, false, "选择图片失败");
+                        mCallback = null;
                         break;
                 }
             }
@@ -243,79 +294,27 @@ public class QPhotoUtils {
      * 打开相册
      */
 
-    public static void select(FragmentManager manager, Callback photoCallBack) {
-        getPhotoFragment(manager).select(photoCallBack);
+    public static void select(Builder builder, Callback photoCallBack) {
+        getPhotoFragment(builder.fragmentManager).setBuilder(builder).select(photoCallBack);
+    }
+    public static void camera(Builder builder, Callback photoCallBack) {
+        getPhotoFragment(builder.fragmentManager).setBuilder(builder).camera(photoCallBack);
     }
 
-
-    /**
-     * 打开相册
-     */
-
-    public static void select(FragmentActivity activity, Callback photoCallBack) {
-
-        getPhotoFragment(activity.getSupportFragmentManager()).select(photoCallBack);
-    }
-
-    /**
-     * 打开相册
-     */
-
-    public static void select(Fragment fragment, Callback photoCallBack) {
-        getPhotoFragment(fragment.getChildFragmentManager()).select(photoCallBack);
-    }
-
-    /**
-     * 调用相机拍照
-     */
-    static void camera(FragmentManager manager, Callback photoCallBack) {
-        getPhotoFragment(manager).camera(photoCallBack);
-    }
-
-    /**
-     * 调用相机拍照
-     */
-
-    public static void camera(FragmentActivity activity, Callback photoCallBack) {
-        getPhotoFragment(activity.getSupportFragmentManager()).
-                camera(photoCallBack);
-    }
-
-    public static void cameraCard(Context activity, CameraView.CameraCall cameraCall) {
-        CameraActivity.startCamera(activity, cameraCall);
-    }
-
-    /**
-     * 调用相机拍照
-     */
-    public static void camera(Fragment fragment, Callback photoCallBack) {
-        getPhotoFragment(fragment.getChildFragmentManager()).
-                camera(photoCallBack);
-    }
-
-    private static void crop(FragmentManager manager, Uri uri, int aspectX, int aspectY, int outputX, int outputY, Callback cropCallBack) {
+    private static void crop(FragmentManager manager, Uri uri, int aspectX, int aspectY, int outputX, int outputY, Callback mCallback) {
         getPhotoFragment(manager).
-                crop(uri, aspectX, aspectY, outputX, outputY, cropCallBack);
+                crop(uri, aspectX, aspectY, outputX, outputY, mCallback);
     }
 
-    /**
-     * 调用裁剪功能
-     */
-    public static Crop crop(FragmentManager manager) {
-        return new Crop(manager);
-    }
-
-    /**
-     * 调用裁剪功能
-     */
-    public static Crop crop(FragmentActivity activity) {
-        return crop(activity.getSupportFragmentManager());
-    }
 
 
     public static class Crop {
         FragmentManager manager;
-
+        public static  Crop create(){
+            return new Crop();
+        }
+        Crop() {
+        }
         Crop(FragmentManager manager) {
             this.manager = manager;
         }
@@ -324,11 +323,11 @@ public class QPhotoUtils {
         private int aspectY = 0;
         private int outputX = 0;
         private int outputY = 0;
-
+        private Uri uri;
         /**
          * 设置比例
          */
-        Crop setAspect(int aspectX, int aspectY) {
+        public Crop setAspect(int aspectX, int aspectY) {
             this.aspectX = aspectX;
             this.aspectY = aspectY;
             return this;
@@ -337,17 +336,19 @@ public class QPhotoUtils {
         /**
          * 设置输出图片的宽高
          */
-        Crop setOutput(int width, int height) {
+        public Crop setOutput(int width, int height) {
             this.outputX = width;
             this.outputY = height;
             return this;
         }
 
-        void build(Uri uri, Callback cropCallBack) {
-            crop(manager, uri, aspectX, aspectY, outputX, outputY, cropCallBack);
+        public Crop setUri(Uri uri) {
+            this.uri = uri;
+            return this;
         }
-    }
-    interface Executer {
-        void exe(Callback callback);
+
+        void build(Callback mCallback) {
+            crop(manager, uri, aspectX, aspectY, outputX, outputY, mCallback);
+        }
     }
 }

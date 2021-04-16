@@ -127,16 +127,16 @@ public class OrmTest {
                     }
                 });
 
-        //调用相册
-        QPhotoUtils.select((Fragment) null, (uri, result, arg) -> {
-            if (result) {
-                QCompression.newInstance()
-                        .getCompressionBuilder(null)
-                        .from(uri)
-                        .setMaxSize(100)
-                        .get();
-            }
-        });
+//        //调用相册
+//        QPhotoUtils.select((Fragment) null, (uri, result, arg) -> {
+//            if (result) {
+//                QCompression.newInstance()
+//                        .getCompressionBuilder(null)
+//                        .from(uri)
+//                        .setMaxSize(100)
+//                        .get();
+//            }
+//        });
 
     }
 
