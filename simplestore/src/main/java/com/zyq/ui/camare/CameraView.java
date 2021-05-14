@@ -5,12 +5,14 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.hardware.Camera;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -42,10 +44,13 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
     private RelativeLayout mPhotoLayout;
     private View maskView, tackPhotoView;//遮罩
     private CameraDrawable cameraDrawable;
+    private boolean isCard=false;
     private boolean isTakePhoto;
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
+//    SensorControler sensorControler;
     private CameraCall cameraCall;
+    int mScreenWidth,mScreenHeight;
     private int[] state_press = new int[]{android.R.attr.state_pressed, android.R.attr.state_enabled};
 
     public void setCameraCall(CameraCall cameraCall) {
@@ -63,6 +68,10 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
         initUi();
     }
 
+    public void setCard(boolean card) {
+        isCard = card;
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     public CameraView(Context context) {
         super(context);
@@ -71,6 +80,16 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     private void initUi() {
+        DisplayMetrics mDisplayMetrics = getContext().getResources()
+                .getDisplayMetrics();
+        mScreenWidth = mDisplayMetrics.widthPixels;
+        mScreenHeight = mDisplayMetrics.heightPixels;
+        sensorControler=SensorControler.getInstance(getContext());
+        sensorControler.setCameraFocusListener(() -> {
+            makeFocus(mScreenWidth/2,mScreenHeight/2);
+        });
+
+
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, sp2px(80));
         lp.gravity = Gravity.BOTTOM;
 
@@ -139,7 +158,7 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
         mPhotoLayout.setVisibility(View.VISIBLE);
         mConfirmLayout.setVisibility(View.GONE);
         //开始预览
-        mCamera.startPreview();
+        startCamare();
         imageData = null;
         isTakePhoto = false;
     }
@@ -154,18 +173,24 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
             cameraDrawable = new CameraDrawable(getContext());
             cameraPreview = new CameraPreview(getContext(), mCamera);
             maskView = new View(getContext());
+            maskView.setVisibility(isCard?VISIBLE:GONE);
             maskView.setBackground(cameraDrawable);
-
             mOverCameraView = new OverCameraView(getContext());
             this.addView(cameraPreview);
             this.addView(mOverCameraView);
             this.addView(maskView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
             this.addView(mPhotoLayout);
             this.addView(mConfirmLayout);
+            sensorControler.onStart();
 
         } else {
-            mCamera.startPreview();
+            startCamare();
         }
+    }
+
+    private void startCamare() {
+        mCamera.startPreview();
+        sensorControler.onStart();
     }
 
     @Override
@@ -173,24 +198,31 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
         if (mCamera == null)
             super.onTouchEvent(event);
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (!isFoucing) {
-                float x = event.getX();
-                float y = event.getY();
-                isFoucing = true;
-                if (mCamera != null && !isTakePhoto) {
-                    mOverCameraView.setTouchFoucusRect(mCamera, autoFocusCallback, x, y);
-                }
-                mRunnable = () -> {
-                    Toast.makeText(getContext(), "自动聚焦超时,请调整合适的位置拍摄！", Toast.LENGTH_SHORT);
-                    isFoucing = false;
-                    mOverCameraView.setFoucuing(false);
-                    mOverCameraView.disDrawTouchFocusRect();
-                };
-                //设置聚焦超时
-                mHandler.postDelayed(mRunnable, 3000);
-            }
+            float x = event.getX();
+            float y = event.getY();
+            makeFocus(x,y);
         }
         return super.onTouchEvent(event);
+    }
+
+    private void makeFocus(float x,float y) {
+        if (!isFoucing) {
+
+            isFoucing = true;
+            if (mCamera != null && !isTakePhoto) {
+                mOverCameraView.setTouchFoucusRect(mCamera, autoFocusCallback, x, y);
+            }
+            mRunnable = () -> {
+                Toast.makeText(getContext(), "自动聚焦超时,请调整合适的位置拍摄！", Toast.LENGTH_SHORT);
+                isFoucing = false;
+                mOverCameraView.setFoucuing(false);
+                mOverCameraView.disDrawTouchFocusRect();
+                sensorControler.locked=false;
+
+            };
+            //设置聚焦超时
+            mHandler.postDelayed(mRunnable, 3000);
+        }
     }
 
 
@@ -202,6 +234,7 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
             mOverCameraView.disDrawTouchFocusRect();
             //停止聚焦超时回调
             mHandler.removeCallbacks(mRunnable);
+            sensorControler.locked=false;
         }
     };
 
@@ -234,14 +267,13 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
                     fos.close();
                     Bitmap retBitmap = BitmapFactory.decodeFile(imagePath);
                     retBitmap = BitmapUtils.setTakePicktrueOrientation(Camera.CameraInfo.CAMERA_FACING_BACK, retBitmap);
-
-                    BitmapUtils.saveBitmap(BitmapUtils.cropCardBitmap(retBitmap), imagePath);
-
+                    if(isCard){
+                        BitmapUtils.saveBitmap(BitmapUtils.cropCardBitmap(retBitmap), imagePath);
+                    }else {
+                        BitmapUtils.saveBitmap(retBitmap, imagePath);
+                    }
                     if (cameraCall != null)
                         cameraCall.call(true, imagePath);
-                    LightLog.i(imagePath);
-                    Toast.makeText(getContext(), "保存成功", Toast.LENGTH_SHORT).show();
-
                 } catch (IOException e) {
                     e.printStackTrace();
                     cameraCall.call(false, imagePath);
@@ -259,10 +291,18 @@ public class CameraView extends FrameLayout implements View.OnClickListener {
             //视图动画
             mPhotoLayout.setVisibility(View.GONE);
             mConfirmLayout.setVisibility(View.VISIBLE);
+            if(!isCard){
+                mConfirmLayout.setBackgroundColor(Color.TRANSPARENT);
+            }
             imageData = data;
             //停止预览
-            mCamera.stopPreview();
+            stopCamera();
         });
+    }
+
+    private void stopCamera() {
+        mCamera.stopPreview();
+        sensorControler.onStop();
     }
 
     public interface CameraCall {

@@ -1,6 +1,8 @@
 package com.zyq.simpleandroid;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -14,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
 import com.google.gson.Gson;
 import com.jfz.wealth.R;
 import com.zyq.SuperCompression.QCompression;
@@ -33,17 +36,27 @@ import androidx.appcompat.widget.AppCompatTextView;
 
 public class Main2Activity extends BaseActivity {
     CameraView cameraView = null;
+    static Main2Activity self;
     LinearLayout group;
     ImageView img1;
     MarqueeGroup mMarqueeGroup;
-
+    RequestManager requestManager;
+    Uri path;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        self=this;
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_main2);
         Gson.setStrictMode(false);
         img1 = findViewById(R.id.img1);
-
+        requestManager=Glide.with(getApplicationContext());
+        if(savedInstanceState!=null){
+            path=savedInstanceState.getParcelable("data");
+        }
+        if(path!=null){
+            requestManager.load(path).into(img1);
+        }
 //        cameraView = findViewById(R.id.camera);
 //        cameraView.setCameraCall((flag, path) -> {
 //            if (flag) {
@@ -57,6 +70,12 @@ public class Main2Activity extends BaseActivity {
             mMarqueeGroup.pause();
         }
     }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+    }
+
     public void goLogin(View view) {
 //        mMarqueeGroup = findViewById(R.id.MarqueeGroup);
 //        new MarqueeGroup.Builder().setAdapter(new Adapter()).setShowLine(1).setCatchSize(5).setRecycle(false).bindView(mMarqueeGroup);
@@ -80,9 +99,9 @@ public class Main2Activity extends BaseActivity {
             @Override
             public void hasPermission(List<String> granted, boolean all) {
                 if (all) {
-                   new QPhotoUtils.Builder().bind(Main2Activity.this).setCrop(QPhotoUtils.Crop.create()).select((uri, result, arg) -> {
+                   new QPhotoUtils.Builder().bind(Main2Activity.this).cameraCard((flag, path) -> {
                        ImageView img1 = findViewById(R.id.img1);
-                        Glide.with(Main2Activity.this).load(uri).into(img1);
+                                        Glide.with(Main2Activity.this).load(path).into(img1);
                    });
 
 //                    QPhotoUtils.camera(Main2Activity.this, (uri, result, arg) -> {
@@ -123,8 +142,27 @@ public class Main2Activity extends BaseActivity {
 
     }
 
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putParcelable("data",path);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onDestroy() {
+        self=null;
+        super.onDestroy();
+
+    }
+
     public void getToken(View view) {
-        AutoLoginManager.getInstance().getToken(this);
+//        AutoLoginManager.getInstance().getToken(this);
     }
 
     static class Adapter extends MarqueeGroup.MarqueeAdapter<Holder> {

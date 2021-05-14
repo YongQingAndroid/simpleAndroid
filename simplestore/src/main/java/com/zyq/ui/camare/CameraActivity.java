@@ -62,6 +62,7 @@ public class CameraActivity extends AppCompatActivity {
     private void initUI() {
         cameraView = new CameraView(this);
         setContentView(cameraView);
+        cameraView.setCard(true);
         cameraView.setCameraCall((flag, path) -> {
 
             CameraView.CameraCall cameraCall = getCall();
